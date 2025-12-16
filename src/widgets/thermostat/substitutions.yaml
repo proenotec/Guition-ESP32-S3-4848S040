@@ -1,0 +1,15 @@
+climates_amount: 4 # choice 1,2,3 or 4
+
+#1: "Salon Thermostat"
+thermo_entity_1: climate.salon
+#2: "Bathroom Thermostat"
+thermo_entity_2: climate.bathroom
+#3: "Maindorm Thermostat"
+thermo_entity_3: climate.dorm
+#4: "Pasillo Thermostat"
+thermo_entity_4: climate.pasillo
+
+thermo_icon_1: "\U000F04B9"  # mdi:sofa (Living Room)
+thermo_icon_2: "\U000F1818"  # mdi:bathtub (Bathroom)
+thermo_icon_3: "\U000F02E3"  # mdi:bed (Bedroom)
+thermo_icon_4: "\U000F081C"  # mdi:door-open

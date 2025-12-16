@@ -1,93 +1,590 @@
-sensor:  
-  # Cover Current Position 
-  - platform: homeassistant
-    id: ${widget_name}_current_pos_sensor
-    entity_id: "${cover_entity}"
-    attribute: current_position
+substitutions: !include substitutions.yaml
+
+globals:
+  # Global variables for friendly names
+  - id: cover_name_1_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: cover_name_2_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: cover_name_3_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: cover_name_4_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: cover_name_5_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: cover_name_6_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: current_cover_index
+    type: int
+    initial_value: '1'
+    restore_value: no
+
+  - id: current_cover_entity
+    type: std::string
+    restore_value: false
+    initial_value: '"${cover_entity_1}"'
+
+sensor:
+  # Template aggregators for shared UI updates (reactive to specific sensor changes when index matches)
+  - platform: template
+    id: cover_current_pos_sensor
+    internal: true
+    lambda: |-
+      auto get_pos = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(cover_current_pos_sensor_1).state;
+          case 2: return id(cover_current_pos_sensor_2).state;
+          case 3: return id(cover_current_pos_sensor_3).state;
+          case 4: return id(cover_current_pos_sensor_4).state;
+          case 5: return id(cover_current_pos_sensor_5).state;
+          case 6: return id(cover_current_pos_sensor_6).state;
+          default: return {};
+        }
+      };
+      return get_pos(id(current_cover_index));
     on_value:
       - if:
           condition:
-            lambda: return id(${widget_name}_current_pos_sensor).has_state();
+            lambda: return id(cover_current_pos_sensor).has_state();
           then:
             - lvgl.label.update:
-                id: ${widget_name}_cover_state_label
+                id: cover_state_label
                 y: -5
 
             - lvgl.arc.update:
-                id: ${widget_name}_cover_position_arc
+                id: cover_position_arc
                 value: !lambda return int(x);
                 clickable: true
                 indicator:
                   arc_color: color_red
 
             - lvgl.label.update:
-                id: ${widget_name}_cover_pos_label
+                id: cover_pos_label
                 text: !lambda |-
                   static char buf[8];
                   snprintf(buf, sizeof(buf), "%.0f%%", x);
                   return buf;
 
+  # Individual HA sensors for each cover (consolidated on_value to publish only if active)
+  - platform: homeassistant
+    id: cover_current_pos_sensor_1
+    entity_id: "${cover_entity_1}"
+    attribute: current_position
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: cover_current_pos_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_current_pos_sensor_2
+    entity_id: "${cover_entity_2}"
+    attribute: current_position
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: cover_current_pos_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_current_pos_sensor_3
+    entity_id: "${cover_entity_3}"
+    attribute: current_position
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: cover_current_pos_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_current_pos_sensor_4
+    entity_id: "${cover_entity_4}"
+    attribute: current_position
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: cover_current_pos_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_current_pos_sensor_5
+    entity_id: "${cover_entity_5}"
+    attribute: current_position
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 5;'
+          then:
+            - sensor.template.publish:
+                id: cover_current_pos_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_current_pos_sensor_6
+    entity_id: "${cover_entity_6}"
+    attribute: current_position
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 6;'
+          then:
+            - sensor.template.publish:
+                id: cover_current_pos_sensor
+                state: !lambda 'return x;'
 
 text_sensor:
-  # Cover Name
+  # Friendly name sensors - store in globals
   - platform: homeassistant
-    id: ${widget_name}_name_sensor
-    entity_id: "${cover_entity}"
+    id: cover_name_1
+    entity_id: "${cover_entity_1}"
     attribute: friendly_name
     on_value:
-      - lvgl.label.update:
-          id: ${widget_name}_cover_name_label
-          text: !lambda return x;
+      - lambda: |-
+          id(cover_name_1_stored) = x;
+          ESP_LOGD("cover_name", "Stored cover 1 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 1;'
+          then:
+            - lvgl.label.update:
+                id: cover_name_label
+                text: !lambda 'return x;'
 
-        
-  # Cover State
   - platform: homeassistant
-    id: ${widget_name}_state_sensor
-    entity_id: "${cover_entity}"
+    id: cover_name_2
+    entity_id: "${cover_entity_2}"
+    attribute: friendly_name
     on_value:
-      - script.execute: ${widget_name}_update_cover_translations
+      - lambda: |-
+          id(cover_name_2_stored) = x;
+          ESP_LOGD("cover_name", "Stored cover 2 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 2;'
+          then:
+            - lvgl.label.update:
+                id: cover_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_name_3
+    entity_id: "${cover_entity_3}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(cover_name_3_stored) = x;
+          ESP_LOGD("cover_name", "Stored cover 3 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 3;'
+          then:
+            - lvgl.label.update:
+                id: cover_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_name_4
+    entity_id: "${cover_entity_4}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(cover_name_4_stored) = x;
+          ESP_LOGD("cover_name", "Stored cover 4 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 4;'
+          then:
+            - lvgl.label.update:
+                id: cover_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_name_5
+    entity_id: "${cover_entity_5}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(cover_name_5_stored) = x;
+          ESP_LOGD("cover_name", "Stored cover 5 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 5;'
+          then:
+            - lvgl.label.update:
+                id: cover_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_name_6
+    entity_id: "${cover_entity_6}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(cover_name_6_stored) = x;
+          ESP_LOGD("cover_name", "Stored cover 6 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 6;'
+          then:
+            - lvgl.label.update:
+                id: cover_name_label
+                text: !lambda 'return x;'
+
+  # Aggregator for state
+  - platform: template
+    id: cover_state_sensor
+    internal: true
+    lambda: |-
+      auto get_state = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(cover_state_sensor_1).state;
+          case 2: return id(cover_state_sensor_2).state;
+          case 3: return id(cover_state_sensor_3).state;
+          case 4: return id(cover_state_sensor_4).state;
+          case 5: return id(cover_state_sensor_5).state;
+          case 6: return id(cover_state_sensor_6).state;
+          default: return "";
+        }
+      };
+      return get_state(id(current_cover_index));
+    on_value:
+      - script.execute: cover_update_translations
       - if:
           condition:
             lambda: 'return x == "open" || x == "opening";'
           then:
-            - lvgl.label.update:
-                id: ${widget_name}_cover_icon
-                text: "${cover_icon_open}"
-            - lvgl.obj.update:
-                id: ${widget_name}_cover_icon_bg
-                bg_color: color_red
-            - lvgl.label.update:
-                id: ${widget_name}_cover_icon
-                text_color: color_red
+            - script.execute: cover_set_open_style
           else:
-            - lvgl.label.update:
-                id: ${widget_name}_cover_icon
-                text: "${cover_icon_close}"
-            - lvgl.obj.update:
-                id: ${widget_name}_cover_icon_bg
-                bg_color: color_misty_blue
-            - lvgl.label.update:
-                id: ${widget_name}_cover_icon
-                text_color: color_misty_blue
+            - script.execute: cover_set_closed_style
 
+  # Individual state sensors
+  - platform: homeassistant
+    id: cover_state_sensor_1
+    entity_id: "${cover_entity_1}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: cover_state_sensor
+                state: !lambda 'return x;'
 
+  - platform: homeassistant
+    id: cover_state_sensor_2
+    entity_id: "${cover_entity_2}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: cover_state_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_state_sensor_3
+    entity_id: "${cover_entity_3}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: cover_state_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_state_sensor_4
+    entity_id: "${cover_entity_4}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: cover_state_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_state_sensor_5
+    entity_id: "${cover_entity_5}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 5;'
+          then:
+            - text_sensor.template.publish:
+                id: cover_state_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: cover_state_sensor_6
+    entity_id: "${cover_entity_6}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_cover_index) == 6;'
+          then:
+            - text_sensor.template.publish:
+                id: cover_state_sensor
+                state: !lambda 'return x;'
 
 lvgl:
 
+  top_layer:
+    widgets:
+      - obj:
+          id: cover_select_widget
+          hidden: true
+          y: -60
+          width: 440
+          height: 100
+          align: bottom_mid
+          pad_all: 0
+          bg_opa: transp
+          border_opa: transp
+          border_width: 0
+          scrollable: false
+          radius: 20
+          widgets:
+            - obj:
+                id: cover_select_widget_cont
+                width: 440
+                height: 60
+                align: center
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_around
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  - obj:
+                      id: cover_btn_1
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: cover_icon_1
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_1}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_cover
+                            position: 1
+
+                  - obj:
+                      id: cover_btn_2
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: cover_icon_2
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_2}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_cover
+                            position: 2
+
+                  - obj:
+                      id: cover_btn_3
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: cover_icon_3
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_3}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_cover
+                            position: 3
+
+                  - obj:
+                      id: cover_btn_4
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: cover_icon_4
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_4}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_cover
+                            position: 4
+
+                  - obj:
+                      id: cover_btn_5
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: cover_icon_5
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_5}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_cover
+                            position: 5
+
+                  - obj:
+                      id: cover_btn_6
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: cover_icon_6
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_6}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_cover
+                            position: 6
+
+
   pages:
-    - id: ${widget_name}_cover_page
+    - id: cover_page
       bg_color: color_black
       scrollable: false
+      on_load:
+        - lambda: |-
+            int covers = ${covers_amount};
+            if (covers >= 2) {
+              lv_obj_clear_flag(id(cover_select_widget), LV_OBJ_FLAG_HIDDEN);
+            }
+        - script.execute:
+            id: cycle_cover
+            position: 1
       widgets:
         - label:
-            id: ${widget_name}_cover_name_label
+            id: cover_name_label
             y: 20
             align: top_mid
             text_font: nunito_20
             text_color: color_misty_blue
-            text: "My Cover"
+            text: "---"
         - obj:
-            id: ${widget_name}_cover_widget_background
+            id: cover_widget_background
             hidden: false
             y: 70
             width: 440
@@ -104,7 +601,7 @@ lvgl:
             widgets:
               # ICON
               - obj:
-                  id: ${widget_name}_cover_icon_bg
+                  id: cover_icon_bg
                   x: 20
                   width: 80
                   height: 80
@@ -116,7 +613,7 @@ lvgl:
                   radius: 60
                   widgets:
                     - label:
-                        id: ${widget_name}_cover_icon
+                        id: cover_icon
                         align: center
                         text_font: mdi_icons_40
                         text_color: color_misty_blue
@@ -135,7 +632,7 @@ lvgl:
                   radius: 10
                   widgets:
                     - label:
-                        id: ${widget_name}_cover_state_label
+                        id: cover_state_label
                         height: 40
                         width: 260
                         long_mode: DOT
@@ -145,7 +642,7 @@ lvgl:
                         text_font: nunito_20
                         text: "Open"
                     - label:
-                        id: ${widget_name}_cover_pos_label
+                        id: cover_pos_label
                         height: 30
                         width: 260
                         y: 20
@@ -154,10 +651,9 @@ lvgl:
                         text_font: nunito_16
                         text: " "
 
-
         # CONTROL BUTTONS
         - obj:
-            id: ${widget_name}_cover_controls_background
+            id: cover_controls_background
             y: 210
             width: 440
             height: 100
@@ -217,7 +713,7 @@ lvgl:
                                 - homeassistant.action:
                                     action: cover.open_cover
                                     data:
-                                      entity_id: "${cover_entity}"
+                                      entity_id: !lambda 'return id(current_cover_entity);'
 
                           - obj:
                               width: 60
@@ -226,7 +722,7 @@ lvgl:
                               clickable: false
                               radius: 45
                               pad_all: 0
-                              bg_opa: transp 
+                              bg_opa: transp
                               border_opa: transp
                               shadow_width: 4
                               shadow_color: 0xFFFFFF
@@ -283,7 +779,7 @@ lvgl:
                                 - homeassistant.action:
                                     action: cover.close_cover
                                     data:
-                                      entity_id: "${cover_entity}"
+                                      entity_id: !lambda 'return id(current_cover_entity);'
 
                           - obj:
                               width: 60
@@ -292,7 +788,7 @@ lvgl:
                               clickable: false
                               radius: 45
                               pad_all: 0
-                              bg_opa: transp 
+                              bg_opa: transp
                               border_opa: transp
                               shadow_width: 4
                               shadow_color: 0xFFFFFF
@@ -330,10 +826,9 @@ lvgl:
             border_width: 0
             radius: 20
 
-
         # CIRCLE
         - obj:
-            id: ${widget_name}_cover_circle_background
+            id: cover_circle_background
             y: 20
             width: 150
             height: 150
@@ -355,7 +850,6 @@ lvgl:
                   radius: 50
                   border_opa: transp
                   bg_color: color_slate_blue_gray
-
 
               - obj:
                   width: 150
@@ -390,7 +884,7 @@ lvgl:
                         knob:
                           bg_opa: transp
                     - arc:
-                        id: ${widget_name}_cover_position_arc
+                        id: cover_position_arc
                         clickable: false
                         adjustable: true
                         adv_hittest: true
@@ -415,7 +909,7 @@ lvgl:
                           - homeassistant.action:
                               action: cover.set_cover_position
                               data:
-                                entity_id: "${cover_entity}"
+                                entity_id: !lambda 'return id(current_cover_entity);'
                                 position: !lambda return int(x);
 
                     - obj:
@@ -429,7 +923,7 @@ lvgl:
                         bg_opa: transp
                         widgets:
                           - label:
-                              id: ${widget_name}_cover_stop_icon
+                              id: cover_stop_icon
                               align: CENTER
                               text_color: color_misty_blue
                               text_font: mdi_icons_52
@@ -438,7 +932,7 @@ lvgl:
                                 - homeassistant.action:
                                     action: cover.stop_cover
                                     data:
-                                      entity_id: "${cover_entity}"
+                                      entity_id: !lambda 'return id(current_cover_entity);'
 
         # back
         - obj:
@@ -463,17 +957,184 @@ lvgl:
                   border_opa: transp
                   border_width: 0
                   shadow_opa: transp
-                  radius: 15 
+                  radius: 15
             on_click:
               - lvgl.widget.hide: cover_select_widget
               - lvgl.page.show: home_page
 
-
 script:
+  # Cycle cover (similar to thermostat)
+  - id: cycle_cover
+    parameters:
+      position: int
+    then:
+      - lambda: |-
+          const char* entities[] = {"${cover_entity_1}", "${cover_entity_2}", "${cover_entity_3}", "${cover_entity_4}", "${cover_entity_5}", "${cover_entity_6}"};
+          const int num = ${covers_amount};
+          if (position > 0 && position <= num) {
+            id(current_cover_index) = position;
+            id(current_cover_entity) = entities[position - 1];
 
-  - id: ${widget_name}_update_cover_translations
+            // Update friendly name label from stored globals
+            std::string name = "";
+            switch (position) {
+              case 1: name = id(cover_name_1_stored); break;
+              case 2: name = id(cover_name_2_stored); break;
+              case 3: name = id(cover_name_3_stored); break;
+              case 4: name = id(cover_name_4_stored); break;
+              case 5: name = id(cover_name_5_stored); break;
+              case 6: name = id(cover_name_6_stored); break;
+              default: name = "Cover";
+            }
+            if (!name.empty()) {
+              lv_label_set_text(id(cover_name_label), name.c_str());
+            }
+            ESP_LOGI("cover_cycle", "Switched to: %s (%s)", name.c_str(), entities[position - 1]);
+
+            // Reset all button backgrounds to transparent
+            lv_obj_set_style_bg_opa(id(cover_btn_1), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(cover_btn_2), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(cover_btn_3), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(cover_btn_4), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(cover_btn_5), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(cover_btn_6), LV_OPA_TRANSP, 0);
+
+            // Reset all icon colors to misty_blue
+            lv_obj_set_style_text_color(id(cover_icon_1), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(cover_icon_2), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(cover_icon_3), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(cover_icon_4), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(cover_icon_5), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(cover_icon_6), color_misty_blue, 0);
+
+            // Highlight the selected button
+            switch (position) {
+              case 1:
+                lv_obj_set_style_bg_opa(id(cover_btn_1), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(cover_btn_1), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(cover_icon_1), color_white, 0);
+                break;
+              case 2:
+                lv_obj_set_style_bg_opa(id(cover_btn_2), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(cover_btn_2), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(cover_icon_2), color_white, 0);
+                break;
+              case 3:
+                lv_obj_set_style_bg_opa(id(cover_btn_3), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(cover_btn_3), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(cover_icon_3), color_white, 0);
+                break;
+              case 4:
+                lv_obj_set_style_bg_opa(id(cover_btn_4), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(cover_btn_4), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(cover_icon_4), color_white, 0);
+                break;
+              case 5:
+                lv_obj_set_style_bg_opa(id(cover_btn_5), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(cover_btn_5), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(cover_icon_5), color_white, 0);
+                break;
+              case 6:
+                lv_obj_set_style_bg_opa(id(cover_btn_6), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(cover_btn_6), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(cover_icon_6), color_white, 0);
+                break;
+            }
+          }
+      - script.execute: cover_cycle_refresh
+
+  - id: cover_cycle_refresh
+    then:
+      - delay: 500ms
+      - lambda: |-
+          int idx = id(current_cover_index);
+          ESP_LOGI("CYCLE_REFRESH", "Manually publishing templates for index %d", idx);
+
+          // Current position
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(cover_current_pos_sensor_1).state; break;
+              case 2: val = id(cover_current_pos_sensor_2).state; break;
+              case 3: val = id(cover_current_pos_sensor_3).state; break;
+              case 4: val = id(cover_current_pos_sensor_4).state; break;
+              case 5: val = id(cover_current_pos_sensor_5).state; break;
+              case 6: val = id(cover_current_pos_sensor_6).state; break;
+            }
+            if (val.has_value()) {
+              id(cover_current_pos_sensor).publish_state(val.value());
+            }
+          }
+
+          // State
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(cover_state_sensor_1).state; break;
+              case 2: val = id(cover_state_sensor_2).state; break;
+              case 3: val = id(cover_state_sensor_3).state; break;
+              case 4: val = id(cover_state_sensor_4).state; break;
+              case 5: val = id(cover_state_sensor_5).state; break;
+              case 6: val = id(cover_state_sensor_6).state; break;
+            }
+            if (!val.empty()) {
+              id(cover_state_sensor).publish_state(val);
+            }
+          }
+      - script.execute: cover_get_current_values
+
+  - id: cover_get_current_values
+    then:
+      - lambda: |-
+          if (id(cover_current_pos_sensor).has_state()) {
+            float pos = id(cover_current_pos_sensor).state;
+            lv_arc_set_value(id(cover_position_arc), (int)pos);
+            char buf[8];
+            snprintf(buf, sizeof(buf), "%.0f%%", pos);
+            lv_label_set_text(id(cover_pos_label), buf);
+          }
+
+  - id: cover_update_translations
     then:
       - lvgl.label.update:
-          id: ${widget_name}_cover_state_label
+          id: cover_state_label
           text: !lambda |-
-            return id(i18n_translations).translate(("cover.state." + id(${widget_name}_state_sensor).state));
+            return id(i18n_translations).translate(("cover.state." + id(cover_state_sensor).state));
+
+  - id: cover_set_open_style
+    then:
+      - lambda: |-
+          // Get the correct icon based on current index
+          const char* open_icons[] = {
+            "${cover_icon_opened_1}",
+            "${cover_icon_opened_2}",
+            "${cover_icon_opened_3}",
+            "${cover_icon_opened_4}",
+            "${cover_icon_opened_5}",
+            "${cover_icon_opened_6}"
+          };
+          int idx = id(current_cover_index) - 1;
+          if (idx >= 0 && idx < 6) {
+            lv_label_set_text(id(cover_icon), open_icons[idx]);
+          }
+          lv_obj_set_style_bg_color(id(cover_icon_bg), color_red, 0);
+          lv_obj_set_style_text_color(id(cover_icon), color_red, 0);
+
+  - id: cover_set_closed_style
+    then:
+      - lambda: |-
+          // Get the correct icon based on current index
+          const char* closed_icons[] = {
+            "${cover_icon_closed_1}",
+            "${cover_icon_closed_2}",
+            "${cover_icon_closed_3}",
+            "${cover_icon_closed_4}",
+            "${cover_icon_closed_5}",
+            "${cover_icon_closed_6}"
+          };
+          int idx = id(current_cover_index) - 1;
+          if (idx >= 0 && idx < 6) {
+            lv_label_set_text(id(cover_icon), closed_icons[idx]);
+          }
+          lv_obj_set_style_bg_color(id(cover_icon_bg), color_red, 0);
+          lv_obj_set_style_text_color(id(cover_icon), color_red, 0);

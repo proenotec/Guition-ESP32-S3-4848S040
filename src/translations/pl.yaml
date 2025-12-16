@@ -101,3 +101,27 @@ cover:
     open: otwarto
     opening: otwieranie
     stopped: Stopped
+
+alarm_panel:
+  name: "Panel kontrolny alarmu"
+  enter_pass: "Wprowadź hasło"
+  wrong_pass: "Nieprawidłowe hasło"
+  state:
+    armed: uzbrojony
+    armed_away: uzbrojony (poza domem)
+    armed_custom_bypass: uzbrojony (własny bypass)
+    armed_home: uzbrojony (w domu)
+    armed_night: uzbrojony (noc)
+    armed_vacation: uzbrojony (wakacje)
+    arming: uzbrajanie
+    disarmed: rozbrojony
+    disarming: rozbrajanie
+    pending: oczekiwanie
+    triggered: wyzwolony
+
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

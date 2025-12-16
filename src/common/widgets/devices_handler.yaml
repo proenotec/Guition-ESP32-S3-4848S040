@@ -1,0 +1,30 @@
+- if:
+    condition:
+      lambda: return x == 0;
+    then:
+    - lvgl.page.show: info_page
+- if:
+    condition:
+      lambda: return x == 1;
+    then:
+    - lvgl.page.show: therm_page
+- if:
+    condition:
+      lambda: return x == 2;
+    then:
+    - lvgl.page.show: vacuum_page
+- if:
+    condition:
+      lambda: return x == 3;
+    then:
+    - lvgl.page.show: cover_page
+- if:
+    condition:
+      lambda: return x == 4;
+    then:
+    - lvgl.page.show: fan_page
+- if:
+    condition:
+      lambda: return x == 5;
+    then:
+    - lvgl.page.show: texto_page

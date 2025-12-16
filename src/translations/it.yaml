@@ -101,3 +101,26 @@ cover:
     open: Aperto/a
     opening: In apertura
     stopped: Fermato/a
+
+alarm_panel:
+  name: "Pannello di controllo degli allarmi"
+  enter_pass: "Inserisci la password"
+  wrong_pass: "Password errata"
+  state:
+    armed: Attivo
+    armed_away: Attivo fuori casa
+    armed_custom_bypass: Attivo con esclusione personalizzata
+    armed_home: Attivo in casa
+    armed_night: Attivo notte
+    armed_vacation: Attivo in vacanza
+    arming: In attivazione
+    disarmed: Disattivo
+    disarming: In disattivazione
+    pending: In attesa
+    triggered: Innescato
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

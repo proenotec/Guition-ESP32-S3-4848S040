@@ -1,0 +1,2477 @@
+# https://esphome.io/components/climate/climate.html
+
+substitutions: !include substitutions.yaml
+
+globals:
+
+  # NEW: Global variables for friendly names
+  - id: thermostat_name_1_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: thermostat_name_2_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: thermostat_name_3_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: thermostat_name_4_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: current_climate_index
+    type: int
+    initial_value: '1'
+    restore_value: no
+
+  - id: current_climate_entity
+    type: std::string
+    restore_value: false
+    initial_value: '"${thermo_entity_1}"'
+
+  - id: thermostat_arc_range_initialized
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  - id: thermostat_ui_user_adjusting_target
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: thermostat_temp_step
+    type: float
+    initial_value: "0.1"
+    restore_value: no
+
+  - id: thermostat_temp_step_multiplier
+    type: int
+    initial_value: '10'
+    restore_value: no
+
+sensor:
+  # Template aggregators for shared UI updates (reactive to specific sensor changes when index matches)
+  - platform: template
+    id: thermostat_sensor_target_temp
+    internal: true
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    lambda: |-
+      auto get_temp = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_target_temp_1).state;
+          case 2: return id(thermostat_sensor_target_temp_2).state;
+          case 3: return id(thermostat_sensor_target_temp_3).state;
+          case 4: return id(thermostat_sensor_target_temp_4).state;
+          default: return {};
+        }
+      };
+      return get_temp(id(current_climate_index));
+    on_value:
+      - script.execute: thermostat_update_target_display
+
+  - platform: template
+    id: thermostat_sensor_current_temp
+    internal: true
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    lambda: |-
+      auto get_temp = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_current_temp_1).state;
+          case 2: return id(thermostat_sensor_current_temp_2).state;
+          case 3: return id(thermostat_sensor_current_temp_3).state;
+          case 4: return id(thermostat_sensor_current_temp_4).state;
+          default: return {};
+        }
+      };
+      return get_temp(id(current_climate_index));
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(thermostat_arc_range_initialized);'
+          timeout: 5s
+      - script.execute: thermostat_update_segments
+      - lvgl.arc.update:
+          id: thermostat_arc_current_temperature
+          value: !lambda 'return (int)(x * id(thermostat_temp_step_multiplier) + 0.5f);'
+      - lvgl.label.update:
+          id: thermostat_current_temperature_label
+          text: !lambda |-
+            char buf[8];
+            snprintf(buf, sizeof(buf), "%.1f", x);
+            return std::string(buf);
+
+  - platform: template
+    id: thermostat_sensor_min_temp
+    internal: true
+    lambda: |-
+      auto get_temp = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_min_temp_1).state;
+          case 2: return id(thermostat_sensor_min_temp_2).state;
+          case 3: return id(thermostat_sensor_min_temp_3).state;
+          case 4: return id(thermostat_sensor_min_temp_4).state;
+          default: return {};
+        }
+      };
+      return get_temp(id(current_climate_index));
+    on_value:
+      - script.execute: thermostat_update_arc_temp_range
+
+  - platform: template
+    id: thermostat_sensor_max_temp
+    internal: true
+    lambda: |-
+      auto get_temp = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_max_temp_1).state;
+          case 2: return id(thermostat_sensor_max_temp_2).state;
+          case 3: return id(thermostat_sensor_max_temp_3).state;
+          case 4: return id(thermostat_sensor_max_temp_4).state;
+          default: return {};
+        }
+      };
+      return get_temp(id(current_climate_index));
+    on_value:
+      - script.execute: thermostat_update_arc_temp_range
+
+  - platform: template
+    id: thermostat_sensor_target_temp_step
+    internal: true
+    lambda: |-
+      auto get_step = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_target_temp_step_1).state;
+          case 2: return id(thermostat_sensor_target_temp_step_2).state;
+          case 3: return id(thermostat_sensor_target_temp_step_3).state;
+          case 4: return id(thermostat_sensor_target_temp_step_4).state;
+          default: return {};
+        }
+      };
+      return get_step(id(current_climate_index));
+    on_value:
+      - lambda: |-
+          float raw = x;
+          float chosen = 0.5f;
+          int m = 2;
+          auto near = [](float a, float b)->bool { return fabsf(a-b) < 0.049f; };
+          if (near(raw,0.1f)) { chosen = 0.1f; m = 10; }
+          else if (near(raw,0.5f)) { chosen = 0.5f; m = 2; }
+          else if (near(raw,1.0f)) { chosen = 1.0f; m = 1; }
+          else { chosen = 0.5f; m = 2; }
+          id(thermostat_temp_step) = chosen;
+          id(thermostat_temp_step_multiplier) = m;
+          ESP_LOGI("ARC_STEP","target_temp_step=%.3f -> multiplier=%d", chosen, m);
+          if (id(thermostat_arc_range_initialized)) {
+            id(thermostat_arc_range_initialized) = false;
+            id(thermostat_update_arc_temp_range).execute();
+          }
+
+  # Individual HA sensors for each climate (consolidated on_value to publish only if active)
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_1
+    entity_id: "${thermo_entity_1}"
+    attribute: temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_current_temp_1
+    entity_id: "${thermo_entity_1}"
+    attribute: current_temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_current_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_min_temp_1
+    entity_id: "${thermo_entity_1}"
+    attribute: min_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_min_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_max_temp_1
+    entity_id: "${thermo_entity_1}"
+    attribute: max_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_max_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_step_1
+    entity_id: "${thermo_entity_1}"
+    attribute: target_temp_step
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp_step
+                state: !lambda 'return x;'
+
+  # Repeat for climates 2-4 (kept individual as ESPHome doesn't support loops, but on_value is now minimal)
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_2
+    entity_id: "${thermo_entity_2}"
+    attribute: temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_current_temp_2
+    entity_id: "${thermo_entity_2}"
+    attribute: current_temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_current_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_min_temp_2
+    entity_id: "${thermo_entity_2}"
+    attribute: min_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_min_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_max_temp_2
+    entity_id: "${thermo_entity_2}"
+    attribute: max_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_max_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_step_2
+    entity_id: "${thermo_entity_2}"
+    attribute: target_temp_step
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp_step
+                state: !lambda 'return x;'
+
+  # CLIMATE 3 SENSORS
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_3
+    entity_id: "${thermo_entity_3}"
+    attribute: temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_current_temp_3
+    entity_id: "${thermo_entity_3}"
+    attribute: current_temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_current_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_min_temp_3
+    entity_id: "${thermo_entity_3}"
+    attribute: min_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_min_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_max_temp_3
+    entity_id: "${thermo_entity_3}"
+    attribute: max_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_max_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_step_3
+    entity_id: "${thermo_entity_3}"
+    attribute: target_temp_step
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp_step
+                state: !lambda 'return x;'
+
+  # CLIMATE 4 SENSORS
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_4
+    entity_id: "${thermo_entity_4}"
+    attribute: temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_current_temp_4
+    entity_id: "${thermo_entity_4}"
+    attribute: current_temperature
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_current_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_min_temp_4
+    entity_id: "${thermo_entity_4}"
+    attribute: min_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_min_temp
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_max_temp_4
+    entity_id: "${thermo_entity_4}"
+    attribute: max_temp
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_max_temp
+                state: !lambda 'return x;'
+
+  # CLIMATE TARGET TEMPERATURE STEP
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_step_4
+    entity_id: "${thermo_entity_4}"
+    attribute: target_temp_step
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: thermostat_sensor_target_temp_step
+                state: !lambda 'return x;'
+
+  # CLIMATE TARGET TEMPERATURE HIGH
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_high
+    entity_id: "${thermo_entity_1}"
+    attribute: target_temp_high
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(thermostat_arc_range_initialized);'
+          timeout: 5s
+
+  # CLIMATE TARGET TEMPERATURE LOW
+  - platform: homeassistant
+    id: thermostat_sensor_target_temp_low
+    entity_id: "${thermo_entity_1}"
+    attribute: target_temp_low
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(thermostat_arc_range_initialized);'
+          timeout: 5s
+
+text_sensor:
+
+  # Friendly name sensors - store in globals
+  - platform: homeassistant
+    id: thermostat_name_1
+    entity_id: "${thermo_entity_1}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(thermostat_name_1_stored) = x;
+          ESP_LOGD("thermostat_name", "Stored thermostat 1 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - lvgl.label.update:
+                id: thermostat_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_name_2
+    entity_id: "${thermo_entity_2}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(thermostat_name_2_stored) = x;
+          ESP_LOGD("thermostat_name", "Stored thermostat 2 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - lvgl.label.update:
+                id: thermostat_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_name_3
+    entity_id: "${thermo_entity_3}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(thermostat_name_3_stored) = x;
+          ESP_LOGD("thermostat_name", "Stored thermostat 3 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - lvgl.label.update:
+                id: thermostat_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_name_4
+    entity_id: "${thermo_entity_4}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(thermostat_name_4_stored) = x;
+          ESP_LOGD("thermostat_name", "Stored thermostat 4 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - lvgl.label.update:
+                id: thermostat_name_label
+                text: !lambda 'return x;'
+
+  # Aggregators for state, action, modes, presets (using lambda helpers)
+  - platform: template
+    id: thermostat_sensor_state
+    internal: true
+    lambda: |-
+      auto get_state = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_state_1).state;
+          case 2: return id(thermostat_sensor_state_2).state;
+          case 3: return id(thermostat_sensor_state_3).state;
+          case 4: return id(thermostat_sensor_state_4).state;
+          default: return "";
+        }
+      };
+      return get_state(id(current_climate_index));
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(thermostat_arc_range_initialized);'
+          timeout: 5s
+      - script.execute: thermostat_handle_state_change
+
+  - platform: template
+    id: thermostat_sensor_hvac_action
+    internal: true
+    lambda: |-
+      auto get_action = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(thermostat_sensor_hvac_action_1).state;
+          case 2: return id(thermostat_sensor_hvac_action_2).state;
+          case 3: return id(thermostat_sensor_hvac_action_3).state;
+          case 4: return id(thermostat_sensor_hvac_action_4).state;
+          default: return "";
+        }
+      };
+      return get_action(id(current_climate_index));
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(thermostat_arc_range_initialized);'
+          timeout: 5s
+      - lvgl.label.update:
+          id: thermostat_state_label
+          text: !lambda |-
+            std::string s = x;
+            if (!s.empty()) {
+              s[0] = (char)toupper((unsigned char)s[0]);
+            }
+            return s;
+          text_color: !lambda |-
+            std::string a = x;
+            for (auto &c : a) c = (char)tolower((unsigned char)c);
+            if (a == "heating")      return color_red;
+            if (a == "idle")         return color_misty_blue;
+            if (a == "off")          return color_steel_blue;
+            // fallback
+            return color_steel_blue;
+
+  - platform: template
+    id: thermostat_hvac_modes
+    internal: true
+    lambda: |-
+      auto get_modes = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(thermostat_hvac_modes_1).state;
+          case 2: return id(thermostat_hvac_modes_2).state;
+          case 3: return id(thermostat_hvac_modes_3).state;
+          case 4: return id(thermostat_hvac_modes_4).state;
+          default: return "";
+        }
+      };
+      return get_modes(id(current_climate_index));
+    on_value:
+      - script.execute: thermostat_update_mode_buttons_visibility
+
+  - platform: template
+    id: thermostat_preset_modes
+    internal: true
+    lambda: |-
+      auto get_presets = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(thermostat_preset_modes_1).state;
+          case 2: return id(thermostat_preset_modes_2).state;
+          case 3: return id(thermostat_preset_modes_3).state;
+          case 4: return id(thermostat_preset_modes_4).state;
+          default: return "";
+        }
+      };
+      return get_presets(id(current_climate_index));
+    on_value:
+      - script.execute: thermostat_update_preset_buttons_visibility
+
+  - platform: template
+    id: thermostat_preset_mode
+    internal: true
+    lambda: |-
+      auto get_preset = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(thermostat_preset_mode_1).state;
+          case 2: return id(thermostat_preset_mode_2).state;
+          case 3: return id(thermostat_preset_mode_3).state;
+          case 4: return id(thermostat_preset_mode_4).state;
+          default: return "";
+        }
+      };
+      return get_preset(id(current_climate_index));
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(thermostat_arc_range_initialized);'
+          timeout: 5s
+      - script.execute: thermostat_update_preset_colors
+
+  # Individual text sensors for each climate (minimal on_value)
+  - platform: homeassistant
+    id: thermostat_sensor_state_1
+    entity_id: "${thermo_entity_1}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_state
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_hvac_action_1
+    entity_id: "${thermo_entity_1}"
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_hvac_action
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_hvac_modes_1
+    entity_id: "${thermo_entity_1}"
+    attribute: hvac_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_hvac_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_modes_1
+    entity_id: "${thermo_entity_1}"
+    attribute: preset_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_mode_1
+    entity_id: "${thermo_entity_1}"
+    attribute: preset_mode
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_mode
+                state: !lambda 'return x;'
+
+  # Repeat minimal on_value for 2-4 (similar for each)
+  - platform: homeassistant
+    id: thermostat_sensor_state_2
+    entity_id: "${thermo_entity_2}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_state
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_hvac_action_2
+    entity_id: "${thermo_entity_2}"
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_hvac_action
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_hvac_modes_2
+    entity_id: "${thermo_entity_2}"
+    attribute: hvac_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_hvac_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_modes_2
+    entity_id: "${thermo_entity_2}"
+    attribute: preset_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_mode_2
+    entity_id: "${thermo_entity_2}"
+    attribute: preset_mode
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_mode
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_state_3
+    entity_id: "${thermo_entity_3}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_state
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_hvac_action_3
+    entity_id: "${thermo_entity_3}"
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_hvac_action
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_hvac_modes_3
+    entity_id: "${thermo_entity_3}"
+    attribute: hvac_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_hvac_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_modes_3
+    entity_id: "${thermo_entity_3}"
+    attribute: preset_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_mode_3
+    entity_id: "${thermo_entity_3}"
+    attribute: preset_mode
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_mode
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_state_4
+    entity_id: "${thermo_entity_4}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_state
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_sensor_hvac_action_4
+    entity_id: "${thermo_entity_4}"
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_sensor_hvac_action
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_hvac_modes_4
+    entity_id: "${thermo_entity_4}"
+    attribute: hvac_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_hvac_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_modes_4
+    entity_id: "${thermo_entity_4}"
+    attribute: preset_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: thermostat_preset_mode_4
+    entity_id: "${thermo_entity_4}"
+    attribute: preset_mode
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_climate_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: thermostat_preset_mode
+                state: !lambda 'return x;'
+
+lvgl:
+  top_layer:
+    widgets:
+      - obj:
+          id: thermo_select_widget
+          hidden: true
+          x: -40
+          y: -40
+          width: 300
+          height: 110
+          align: top_left
+          pad_all: 0
+          bg_color: color_slate_blue_gray
+          bg_opa: cover
+          border_opa: transp
+          border_width: 0
+          shadow_color: color_black
+          shadow_spread: 3
+          shadow_width: 8
+          scrollable: false
+          radius: 40
+          widgets:
+            - obj:
+                id: climate_select_widget_cont
+                x: -10
+                y: -5
+                width: 240
+                height: 60
+                align: bottom_right
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_evenly
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  - obj:
+                      id: climate_btn_1
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: thermo_icon_1
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${thermo_icon_1}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_climate
+                            position: 1
+                  - obj:
+                      id: climate_btn_2
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: thermo_icon_2
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${thermo_icon_2}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_climate
+                            position: 2
+                  - obj:
+                      id: climate_btn_3
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: thermo_icon_3
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${thermo_icon_3}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_climate
+                            position: 3
+                  - obj:
+                      id: climate_btn_4
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: thermo_icon_4
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${thermo_icon_4}"
+                      on_press:
+                        - script.execute:
+                            id: cycle_climate
+                            position: 4
+
+  pages:
+    - id: therm_page
+      bg_color: color_slate_blue_gray
+      on_load:
+        - lambda: |-
+            int num_climates = ${climates_amount};
+            if (num_climates >= 2) {
+              lv_obj_clear_flag(id(thermo_select_widget), LV_OBJ_FLAG_HIDDEN);
+            }
+        # Optional: Add a short delay if needed for smooth transitions
+        # - delay: 250ms  # Uncomment if you see flickering
+        - script.execute:
+            id: cycle_climate
+            position: 1
+      widgets:
+        # Climate name label (updated via script)
+        - label:
+            id: thermostat_name_label
+            y: -30
+            x: 0
+            height: 40
+            width: 240
+            long_mode: dot
+            align: bottom_left
+            text_font: nunito_20
+            text_align: center
+            text_color: color_misty_blue
+            text: "---"
+
+        # State label
+        - label:
+            id: thermostat_state_label
+            x: 110
+            y: 40
+            align: top_left
+            text_font: nunito_20
+            text_color: color_misty_blue
+            text: " "
+
+        # HVAC modes container (buttons shown/hidden via script)
+        - obj:
+            id: thermostat_controls_hvac_modes
+            x: 20
+            width: 80
+            height: 480
+            align: top_left
+            pad_all: 3
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            layout:
+              type: flex
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              # Auto button
+              - obj:
+                  id: thermostat_auto_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: thermostat_auto_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "\U000F0A9E"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_hvac_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          hvac_mode: auto
+              # Heat button
+              - obj:
+                  id: thermostat_heat_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: thermostat_heat_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${heat_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_hvac_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          hvac_mode: heat
+              # Off button
+              - obj:
+                  id: thermostat_off_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: thermostat_off_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${off_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_hvac_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          hvac_mode: "off"
+
+        # Presets container (buttons shown/hidden via script)
+        - obj:
+            id: thermostat_controls_presets
+            x: 100
+            y: 80
+            width: 80
+            height: 340
+            align: top_left
+            pad_all: 3
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            layout:
+              type: flex
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              # Eco button
+              - obj:
+                  id: thermostat_eco_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_eco_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${eco_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: eco
+              # Away button
+              - obj:
+                  id: thermostat_away_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_away_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${away_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: away
+              # Boost button
+              - obj:
+                  id: thermostat_boost_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_boost_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${boost_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: boost
+              # Comfort button
+              - obj:
+                  id: thermostat_comfort_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_comfort_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${comfort_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: comfort
+              # Home button
+              - obj:
+                  id: thermostat_home_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_home_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${home_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: home
+              # Sleep button
+              - obj:
+                  id: thermostat_sleep_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_sleep_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${sleep_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: sleep
+              # Activity button
+              - obj:
+                  id: thermostat_activity_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_activity_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${activity_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda 'return id(current_climate_entity);'
+                          preset_mode: activity
+
+        # Main temperature widget (arcs, labels)
+        - obj:
+            id: thermostat_bg_main_temperature
+            hidden: false
+            width: 240
+            height: 480
+            align: right_mid
+            pad_all: 0
+            bg_opa: transp
+            scrollable: false
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              # Outer ring
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  scrollable: false
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 460
+                        height: 460
+                        align: center
+                        clickable: true
+                        radius: 260
+                        bg_color: color_slate_blue_gray
+                        border_color: color_black
+                        border_opa: 40%
+                        border_width: 3
+
+              # Inner elements (arcs)
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 366
+                        height: 366
+                        align: center
+                        clickable: false
+                        radius: 230
+                        bg_color: color_slate_blue_gray
+                        border_color: color_white
+                        border_width: 3
+                        border_opa: 15%
+
+                    # Background arc
+                    - arc:
+                        id: thermostat_arc_background
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_color: color_steel_blue
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+
+                    # Current temp arc
+                    - arc:
+                        id: thermostat_arc_current_temperature
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: color_steel_blue
+
+                    # Knob arc
+                    - arc:
+                        id: thermostat_arc_knob
+                        clickable: true
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: color_white
+                          border_color: color_steel_blue
+                          border_width: 4
+                          shadow_color: color_black
+                          shadow_spread: 2
+                          shadow_width: 13
+                          shadow_opa: 30%
+                        on_value:
+                          - lambda: |-
+                              if (!id(thermostat_ui_user_adjusting_target))
+                                id(thermostat_ui_user_adjusting_target) = true;
+                              int m = id(thermostat_temp_step_multiplier);
+                              float temp = x / (float)m;
+                              int scaled = (int)(temp * m + 0.5f);
+                              int whole = scaled / m;
+                              int frac = ((scaled * 10) / m) % 10;
+                              char wbuf[8], fbuf[8];
+                              snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                              snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                              lv_label_set_text(id(thermostat_target_temperature_whole), wbuf);
+                              lv_label_set_text(id(thermostat_target_temperature_fraction), fbuf);
+                        on_release:
+                          - homeassistant.action:
+                              action: climate.set_temperature
+                              data:
+                                entity_id: !lambda 'return id(current_climate_entity);'
+                                temperature: !lambda return x / (float)id(thermostat_temp_step_multiplier);
+
+                    # Heat base arc
+                    - arc:
+                        id: thermostat_arc_base_heat
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_deep_orange
+                          arc_width: 34
+                        knob:
+                          pad_all: -1
+                          bg_color: color_white
+                          border_color: color_red
+                          border_width: 4
+                          shadow_color: color_black
+                        on_value:
+                          - lambda: |-
+                              if (id(thermostat_sensor_state).state == "heat") {
+                                if (!id(thermostat_ui_user_adjusting_target))
+                                  id(thermostat_ui_user_adjusting_target) = true;
+                                lv_arc_set_value(id(thermostat_arc_knob_heat), x);
+                                float temp = x / (float)id(thermostat_temp_step_multiplier);
+                                int scaled = (int)(temp * id(thermostat_temp_step_multiplier) + 0.5f);
+                                int whole = scaled / id(thermostat_temp_step_multiplier);
+                                int frac = ((scaled * 10) / id(thermostat_temp_step_multiplier)) % 10;
+                                char wbuf[8], fbuf[8];
+                                snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                                snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                                lv_label_set_text(id(thermostat_target_temperature_whole), wbuf);
+                                lv_label_set_text(id(thermostat_target_temperature_fraction), fbuf);
+                                id(thermostat_update_segments).execute();
+                              }
+                        on_release:
+                          - lambda: |-
+                              id(thermostat_ui_user_adjusting_target) = false;
+                          - if:
+                              condition:
+                                lambda: 'return id(thermostat_sensor_state).state == "heat";'
+                              then:
+                                - homeassistant.action:
+                                    action: climate.set_temperature
+                                    data:
+                                      entity_id: !lambda 'return id(current_climate_entity);'
+                                      temperature: !lambda 'return lv_arc_get_value(id(thermostat_arc_base_heat)) / (float)id(thermostat_temp_step_multiplier);'
+
+                    # Heat segment
+                    - arc:
+                        id: thermostat_arc_segment_heat
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 90
+                        end_angle: 100
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_red
+                          arc_width: 34
+                        knob:
+                          bg_opa: transp
+
+                    # Heat dot
+                    - arc:
+                        id: thermostat_arc_dot_heat
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: color_deep_orange
+
+                    # Heat knob
+                    - arc:
+                        id: thermostat_arc_knob_heat
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        rotation: 90.0
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        adjustable: true
+                        adv_hittest: true
+                        clickable: false
+                        arc_width: 34
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: color_white
+                          border_color: color_red
+                          border_width: 4
+                          shadow_color: color_black
+
+              # Target temp labels (single/dual)
+              - obj:
+                  id: thermostat_target_temperature_single
+                  width: 140
+                  height: 120
+                  align: RIGHT_MID
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: thermostat_target_temperature_whole
+                        x: -40
+                        y: 0
+                        align: RIGHT_MID
+                        text_font: nunito_84
+                        text_color: color_steel_blue
+                        text: " "
+                    - label:
+                        id: thermostat_target_temperature_fraction
+                        x: -10
+                        y: 15
+                        align: RIGHT_MID
+                        text_font: nunito_36
+                        text_color: color_steel_blue
+                        text: " "
+                    - label:
+                        id: thermostat_target_temperature_measurement
+                        x: -12
+                        y: -20
+                        align: RIGHT_MID
+                        text_font: nunito_30
+                        text_color: color_steel_blue
+                        text: "°C"
+
+              - obj:
+                  id: thermostat_target_temperature_dual
+                  hidden: true
+                  scrollable: false
+                  width: 140
+                  height: 140
+                  align: right_mid
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  layout:
+                    type: flex
+                    pad_row: 0
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    # Heat target low
+                    - label:
+                        id: thermostat_target_low_whole
+                        text_font: nunito_48
+                        text_color: color_steel_blue
+                        text: " "
+                    # Heat target high
+                    - label:
+                        id: thermostat_target_high_whole
+                        text_font: nunito_48
+                        text_color: color_steel_blue
+                        text: " "
+
+              # Current temp label
+              - label:
+                  id: thermostat_current_temperature_label
+                  x: -10
+                  y: 100
+                  align: RIGHT_MID
+                  text_font: nunito_30
+                  text_color: color_steel_blue
+                  text: " "
+
+        # Plus button
+        - obj:
+            x: 150
+            y: -100
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              - obj:
+                  width: 70
+                  height: 70
+                  align: center
+                  clickable: true
+                  radius: 50
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_width: 8
+                  shadow_spread: 2
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 5
+                    shadow_spread: 2
+                  on_press:
+                    - script.execute:
+                        id: thermostat_adjust_temp
+                        direction: up
+              - obj:
+                  width: 60
+                  height: 60
+                  align: center
+                  clickable: false
+                  radius: 45
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 4
+                  shadow_color: 0xFFFFFF
+                  shadow_ofs_x: -4
+                  shadow_ofs_y: -2
+                  shadow_opa: 30%
+              - obj:
+                  width: 65
+                  height: 65
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+                  widgets:
+                    - label:
+                        id: thermostat_plus_label
+                        align: center
+                        text_font: mdi_icons_40
+                        text_color: color_misty_blue
+                        text: "${plus_icon}"
+
+        # Minus button
+        - obj:
+            x: 150
+            y: 100
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              - obj:
+                  width: 70
+                  height: 70
+                  align: center
+                  clickable: true
+                  radius: 50
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_width: 8
+                  shadow_spread: 2
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: 0x3A3A4C
+                    shadow_width: 5
+                  on_press:
+                    - script.execute:
+                        id: thermostat_adjust_temp
+                        direction: down
+              - obj:
+                  width: 60
+                  height: 60
+                  align: center
+                  clickable: false
+                  radius: 45
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 4
+                  shadow_color: 0xFFFFFF
+                  shadow_ofs_x: -4
+                  shadow_ofs_y: -2
+                  shadow_opa: 30%
+              - obj:
+                  width: 65
+                  height: 65
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+                  widgets:
+                    - label:
+                        id: thermostat_minus_label
+                        align: CENTER
+                        text_font: mdi_icons_40
+                        text_color: color_misty_blue
+                        text: "${minus_icon}"
+
+        # Back
+        - obj:
+            x: 150
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_left
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15
+            on_click:
+              - lambda: |-
+                  lv_obj_add_flag(id(thermo_select_widget), LV_OBJ_FLAG_HIDDEN);
+              - lvgl.page.show: home_page
+
+#on_some_event:
+#  then:
+#    - if:
+#        condition:
+#          lvgl.page.is_showing: therm_page
+#        then:
+#          - lambda: |-
+#              int num_climates = ${climates_amount};
+#              if (num_climates >= 2) {
+#                lv_obj_clear_flag(id(thermo_select_widget), LV_OBJ_FLAG_HIDDEN);
+#              }
+#          # Optional: Add a short delay if needed for smooth transitions
+#          # - delay: 250ms  # Uncomment if you see flickering
+
+script:
+  # Consolidated state handler (replaces repeated if-blocks)
+  - id: thermostat_handle_state_change
+    then:
+      - lambda: |-
+          std::string state = id(thermostat_sensor_state).state;
+          bool is_heat = (state == "heat");
+          bool is_off = (state == "off");
+
+          // Show/hide widgets based on mode
+          lv_obj_clear_flag(id(thermostat_target_temperature_single), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(thermostat_target_temperature_dual), LV_OBJ_FLAG_HIDDEN);
+
+          if (is_heat) {
+            lv_obj_add_flag(id(thermostat_arc_background), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(thermostat_arc_knob), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(thermostat_arc_base_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(thermostat_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(thermostat_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(thermostat_arc_knob_heat), LV_OBJ_FLAG_HIDDEN);
+
+            // Update colors and arcs for heat
+            lv_obj_set_style_text_color(id(thermostat_target_temperature_whole), color_deep_orange, 0);
+            lv_obj_set_style_text_color(id(thermostat_target_temperature_fraction), color_deep_orange, 0);
+            lv_obj_set_style_text_color(id(thermostat_target_temperature_measurement), color_deep_orange, 0);
+            lv_obj_set_style_text_color(id(thermostat_heat_mode_label), color_deep_orange, 0);
+            lv_obj_set_style_text_color(id(thermostat_auto_mode_label), color_misty_blue, 0);
+
+            int m = id(thermostat_temp_step_multiplier);
+            int target_scaled = (int)(id(thermostat_sensor_target_temp).state * m + 0.5f);
+            lv_arc_set_value(id(thermostat_arc_base_heat), target_scaled);
+            lv_arc_set_value(id(thermostat_arc_knob_heat), target_scaled);
+
+            id(thermostat_ui_user_adjusting_target) = false;
+          } else {
+            lv_obj_clear_flag(id(thermostat_arc_background), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(thermostat_arc_knob), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(thermostat_arc_base_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(thermostat_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(thermostat_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(thermostat_arc_knob_heat), LV_OBJ_FLAG_HIDDEN);
+
+            lv_arc_set_value(id(thermostat_arc_background), lv_arc_get_max_value(id(thermostat_arc_background)));
+
+            int m = id(thermostat_temp_step_multiplier);
+            if (id(thermostat_sensor_target_temp).has_state()) {
+              int target_scaled = (int)(id(thermostat_sensor_target_temp).state * m + 0.5f);
+              lv_arc_set_value(id(thermostat_arc_knob), target_scaled);
+            }
+            if (id(thermostat_sensor_current_temp).has_state()) {
+              int current_scaled = (int)(id(thermostat_sensor_current_temp).state * m + 0.5f);
+              lv_arc_set_value(id(thermostat_arc_current_temperature), current_scaled);
+            }
+
+            id(thermostat_ui_user_adjusting_target) = false;
+          }
+
+          if (is_off) {
+            // Off-specific colors
+            lv_obj_set_style_arc_color(id(thermostat_arc_background), color_misty_blue, 0);
+            lv_obj_set_style_border_color(id(thermostat_arc_knob), color_misty_blue, LV_PART_KNOB);
+            lv_obj_set_style_text_color(id(thermostat_target_temperature_whole), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermostat_target_temperature_fraction), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermostat_target_temperature_measurement), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermostat_heat_mode_label), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermostat_auto_mode_label), color_misty_blue, 0);
+          }
+
+          id(thermostat_update_active_arc_layer).execute();
+          id(thermostat_update_segments).execute();
+          id(thermostat_update_adjust_buttons_color).execute();
+
+  - id: thermostat_update_target_display
+    then:
+      - lambda: |-
+          float t = id(thermostat_sensor_target_temp).state;
+          int m = id(thermostat_temp_step_multiplier);
+          int scaled = (int)(t * m + 0.5f);
+          int whole = scaled / m;
+          int frac_digit = ((scaled * 10) / m) % 10;
+          char buf_whole[10], buf_frac[10];
+          snprintf(buf_whole, sizeof(buf_whole), "%d", whole);
+          snprintf(buf_frac, sizeof(buf_frac), ".%01d", frac_digit);
+          lv_label_set_text(id(thermostat_target_temperature_whole), buf_whole);
+          lv_label_set_text(id(thermostat_target_temperature_fraction), buf_frac);
+      - if:
+          condition:
+            lambda: 'return id(thermostat_sensor_state).state == "heat";'
+          then:
+            - lvgl.arc.update:
+                id: thermostat_arc_base_heat
+                value: !lambda 'return (int)(id(thermostat_sensor_target_temp).state * id(thermostat_temp_step_multiplier) + 0.5f);'
+            - script.execute: thermostat_update_segments
+
+  - id: thermostat_update_preset_colors
+    then:
+      - lambda: |-
+          std::string preset = id(thermostat_preset_mode).state;
+          // Reset all to misty_blue
+          lv_obj_set_style_text_color(id(thermostat_eco_preset_label), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermostat_home_preset_label), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermostat_away_preset_label), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermostat_comfort_preset_label), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermostat_boost_preset_label), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermostat_sleep_preset_label), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermostat_activity_preset_label), color_misty_blue, 0);
+
+          // Highlight active
+          if (preset == "none") return;
+          if (preset == "eco") lv_obj_set_style_text_color(id(thermostat_eco_preset_label), color_green, 0);
+          else if (preset == "home") lv_obj_set_style_text_color(id(thermostat_home_preset_label), color_blue, 0);
+          else if (preset == "away") lv_obj_set_style_text_color(id(thermostat_away_preset_label), color_orange, 0);
+          else if (preset == "comfort") lv_obj_set_style_text_color(id(thermostat_comfort_preset_label), color_yellow, 0);
+          else if (preset == "boost") lv_obj_set_style_text_color(id(thermostat_boost_preset_label), color_red, 0);
+          else if (preset == "sleep") lv_obj_set_style_text_color(id(thermostat_sleep_preset_label), color_dark_blue, 0);
+          else if (preset == "activity") lv_obj_set_style_text_color(id(thermostat_activity_preset_label), color_crimson, 0);
+
+  # New consolidated adjust temp script
+  - id: thermostat_adjust_temp
+    parameters:
+      direction: string  # "up" or "down"
+    then:
+      - lambda: |-
+          std::string mode = id(thermostat_sensor_state).state;
+          float step = id(thermostat_temp_step);
+          int m = id(thermostat_temp_step_multiplier);
+          float min_t = id(thermostat_sensor_min_temp).has_state() ? id(thermostat_sensor_min_temp).state : 5.0f;
+          float max_t = id(thermostat_sensor_max_temp).has_state() ? id(thermostat_sensor_max_temp).state : 35.0f;
+          float cur = id(thermostat_sensor_target_temp).has_state() ? id(thermostat_sensor_target_temp).state : 0.0f;
+
+          if (direction == "up") cur += step;
+          else cur -= step;
+          if (cur < min_t) cur = min_t;
+          if (cur > max_t) cur = max_t;
+
+          int cur_scaled = (int)roundf(cur * m);
+          if (mode == "heat") {
+            lv_arc_set_value(id(thermostat_arc_base_heat), cur_scaled);
+            lv_arc_set_value(id(thermostat_arc_knob_heat), cur_scaled);
+            id(thermostat_update_segments).execute();
+          } else {
+            lv_arc_set_value(id(thermostat_arc_knob), cur_scaled);
+            int whole = cur_scaled / m;
+            int frac = ((cur_scaled * 10) / m) % 10;
+            char wbuf[8], fbuf[8];
+            snprintf(wbuf, sizeof(wbuf), "%d", whole);
+            snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+            lv_label_set_text(id(thermostat_target_temperature_whole), wbuf);
+            lv_label_set_text(id(thermostat_target_temperature_fraction), fbuf);
+          }
+
+      - homeassistant.action:
+          action: climate.set_temperature
+          data:
+            entity_id: !lambda 'return id(current_climate_entity);'
+            temperature: !lambda |-
+              std::string mode = id(thermostat_sensor_state).state;
+              int m = id(thermostat_temp_step_multiplier);
+              if (mode == "heat") {
+                return lv_arc_get_value(id(thermostat_arc_base_heat)) / (float)m;
+              } else {
+                return lv_arc_get_value(id(thermostat_arc_knob)) / (float)m;
+              }
+
+      - lambda: 'id(thermostat_ui_user_adjusting_target) = false;'
+      - script.execute: thermostat_update_segments
+      - script.execute: thermostat_update_adjust_buttons_color
+
+  # Cycle climate (uses substitutions for arrays)
+  - id: cycle_climate
+    parameters:
+      position: int
+    then:
+      - lambda: |-
+          const char* entities[] = {"${thermo_entity_1}", "${thermo_entity_2}", "${thermo_entity_3}", "${thermo_entity_4}"};
+
+          const int num = ${climates_amount};
+          if (position > 0 && position <= num) {
+            id(current_climate_index) = position;
+            id(current_climate_entity) = entities[position - 1];
+
+            // NEW: Update friendly name label from stored globals
+            std::string name = "";
+            switch (position) {
+              case 1: name = id(thermostat_name_1_stored); break;
+              case 2: name = id(thermostat_name_2_stored); break;
+              case 3: name = id(thermostat_name_3_stored); break;
+              case 4: name = id(thermostat_name_4_stored); break;
+              default: name = "Thermostat";
+            }
+            if (!name.empty()) {
+              lv_label_set_text(id(thermostat_name_label), name.c_str());
+            }
+            ESP_LOGI("climate_cycle", "Switched to: %s (%s)", name.c_str(), entities[position - 1]);
+
+            // Reset all button backgrounds to transparent
+            lv_obj_set_style_bg_opa(id(climate_btn_1), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(climate_btn_2), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(climate_btn_3), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(climate_btn_4), LV_OPA_TRANSP, 0);
+
+            // Reset all icon colors to misty_blue
+            lv_obj_set_style_text_color(id(thermo_icon_1), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermo_icon_2), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermo_icon_3), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(thermo_icon_4), color_misty_blue, 0);
+
+            // Highlight the selected button
+            switch (position) {
+              case 1:
+                lv_obj_set_style_bg_opa(id(climate_btn_1), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(climate_btn_1), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(thermo_icon_1), color_white, 0);
+                break;
+              case 2:
+                lv_obj_set_style_bg_opa(id(climate_btn_2), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(climate_btn_2), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(thermo_icon_2), color_white, 0);
+                break;
+              case 3:
+                lv_obj_set_style_bg_opa(id(climate_btn_3), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(climate_btn_3), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(thermo_icon_3), color_white, 0);
+                break;
+              case 4:
+                lv_obj_set_style_bg_opa(id(climate_btn_4), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(climate_btn_4), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(thermo_icon_4), color_white, 0);
+                break;
+            }
+          }
+      - script.execute: thermostat_cycle_refresh
+
+  - id: thermostat_cycle_refresh
+    then:
+      - delay: 500ms
+      - lambda: |-
+          int idx = id(current_climate_index);
+          ESP_LOGI("CYCLE_REFRESH", "Manually publishing templates for index %d", idx);
+
+          // Target temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_target_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_target_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_target_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_target_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_target_temp).publish_state(val.value());
+            }
+          }
+
+          // Current temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_current_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_current_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_current_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_current_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_current_temp).publish_state(val.value());
+            }
+          }
+
+          // Min temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_min_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_min_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_min_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_min_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_min_temp).publish_state(val.value());
+            }
+          }
+
+          // Max temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_max_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_max_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_max_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_max_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_max_temp).publish_state(val.value());
+            }
+          }
+
+          // Target temp step
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_target_temp_step_1).state; break;
+              case 2: val = id(thermostat_sensor_target_temp_step_2).state; break;
+              case 3: val = id(thermostat_sensor_target_temp_step_3).state; break;
+              case 4: val = id(thermostat_sensor_target_temp_step_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_target_temp_step).publish_state(val.value());
+            }
+          }
+
+          // HVAC state
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_state_1).state; break;
+              case 2: val = id(thermostat_sensor_state_2).state; break;
+              case 3: val = id(thermostat_sensor_state_3).state; break;
+              case 4: val = id(thermostat_sensor_state_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_sensor_state).publish_state(val);
+            }
+          }
+
+          // HVAC action
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_hvac_action_1).state; break;
+              case 2: val = id(thermostat_sensor_hvac_action_2).state; break;
+              case 3: val = id(thermostat_sensor_hvac_action_3).state; break;
+              case 4: val = id(thermostat_sensor_hvac_action_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_sensor_hvac_action).publish_state(val);
+            }
+          }
+
+          // HVAC modes
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_hvac_modes_1).state; break;
+              case 2: val = id(thermostat_hvac_modes_2).state; break;
+              case 3: val = id(thermostat_hvac_modes_3).state; break;
+              case 4: val = id(thermostat_hvac_modes_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_hvac_modes).publish_state(val);
+            }
+          }
+
+          // Preset modes
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_preset_modes_1).state; break;
+              case 2: val = id(thermostat_preset_modes_2).state; break;
+              case 3: val = id(thermostat_preset_modes_3).state; break;
+              case 4: val = id(thermostat_preset_modes_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_preset_modes).publish_state(val);
+            }
+          }
+
+          // Current preset mode
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_preset_mode_1).state; break;
+              case 2: val = id(thermostat_preset_mode_2).state; break;
+              case 3: val = id(thermostat_preset_mode_3).state; break;
+              case 4: val = id(thermostat_preset_mode_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_preset_mode).publish_state(val);
+            }
+          }
+
+          // Trigger arc range init if needed (min/max now published)
+          if (!id(thermostat_arc_range_initialized)) {
+            id(thermostat_update_arc_temp_range).execute();
+          }
+      - script.execute: thermostat_get_current_values
+      - script.execute: thermostat_update_active_arc_layer
+      - script.execute: thermostat_update_segments
+      - script.execute: thermostat_update_mode_buttons_visibility
+      - script.execute: thermostat_update_preset_buttons_visibility
+      - script.execute: thermostat_update_adjust_buttons_color
+
+  - id: thermostat_get_current_values
+    then:
+      - lambda: |-
+          float current_temp = id(thermostat_sensor_current_temp).state;
+          float target_temp = id(thermostat_sensor_target_temp).state;
+          int m = id(thermostat_temp_step_multiplier);
+
+          // Current temp label and arc
+          char buf[8];
+          snprintf(buf, sizeof(buf), "%.1f", current_temp);
+          lv_label_set_text(id(thermostat_current_temperature_label), buf);
+          lv_arc_set_value(id(thermostat_arc_current_temperature), (int)(current_temp * m + 0.5f));
+
+          // Target temp label
+          int scaled = (int)(target_temp * m + 0.5f);
+          int whole = scaled / m;
+          int frac_digit = ((scaled * 10) / m) % 10;
+          char whole_buf[10], frac_buf[10];
+          snprintf(whole_buf, sizeof(whole_buf), "%d", whole);
+          snprintf(frac_buf, sizeof(frac_buf), ".%01d", frac_digit);
+          lv_label_set_text(id(thermostat_target_temperature_whole), whole_buf);
+          lv_label_set_text(id(thermostat_target_temperature_fraction), frac_buf);
+
+  - id: thermostat_update_arc_temp_range
+    then:
+      - lambda: |-
+          if (!id(thermostat_arc_range_initialized) &&
+              id(thermostat_sensor_min_temp).has_state() &&
+              id(thermostat_sensor_max_temp).has_state()) {
+            int min_val = (int)id(thermostat_sensor_min_temp).state;
+            int max_val = (int)id(thermostat_sensor_max_temp).state;
+            int m = id(thermostat_temp_step_multiplier);
+            int min_scaled = min_val * m;
+            int max_scaled = max_val * m;
+
+            // Set range for all arcs
+            auto set_range = [&](lv_obj_t* arc) {
+              lv_arc_set_range(arc, min_scaled, max_scaled);
+            };
+            set_range(id(thermostat_arc_background));
+            set_range(id(thermostat_arc_current_temperature));
+            set_range(id(thermostat_arc_knob));
+            set_range(id(thermostat_arc_base_heat));
+            set_range(id(thermostat_arc_dot_heat));
+            set_range(id(thermostat_arc_knob_heat));
+
+            id(thermostat_arc_range_initialized) = true;
+          }
+
+  - id: thermostat_update_mode_buttons_visibility
+    then:
+      - lambda: |-
+          std::string modes = id(thermostat_hvac_modes).state;
+          auto show_if_present = [&](lv_obj_t* btn, const std::string& mode) {
+            if (modes.find(mode) != std::string::npos) {
+              lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
+            } else {
+              lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+            }
+          };
+          show_if_present(id(thermostat_off_mode_btn), "'off'");
+          show_if_present(id(thermostat_heat_mode_btn), "'heat'");
+          show_if_present(id(thermostat_auto_mode_btn), "'auto'");
+
+  - id: thermostat_update_preset_buttons_visibility
+    then:
+      - lambda: |-
+          std::string presets = id(thermostat_preset_modes).state;
+          auto show_if_present = [&](lv_obj_t* btn, const std::string& preset) {
+            if (presets.find(preset) != std::string::npos) {
+              lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
+            } else {
+              lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+            }
+          };
+          show_if_present(id(thermostat_eco_preset_btn), "eco");
+          show_if_present(id(thermostat_away_preset_btn), "away");
+          show_if_present(id(thermostat_boost_preset_btn), "boost");
+          show_if_present(id(thermostat_comfort_preset_btn), "comfort");
+          show_if_present(id(thermostat_home_preset_btn), "home");
+          show_if_present(id(thermostat_sleep_preset_btn), "sleep");
+          show_if_present(id(thermostat_activity_preset_btn), "activity");
+
+  - id: thermostat_update_segments
+    mode: restart
+    then:
+      - lambda: |-
+          if (!id(thermostat_sensor_current_temp).has_state()) return;
+          std::string mode = id(thermostat_sensor_state).state;
+          int min_v = lv_arc_get_min_value(id(thermostat_arc_base_heat));
+          int max_v = lv_arc_get_max_value(id(thermostat_arc_base_heat));
+          if (min_v >= max_v) return;
+
+          int mseg = id(thermostat_temp_step_multiplier);
+          float current_scaled_f = id(thermostat_sensor_current_temp).state * mseg;
+          current_scaled_f = std::clamp(current_scaled_f, (float)min_v, (float)max_v);
+          int current_scaled = (int)current_scaled_f;
+
+          auto angle_for_precise = [&](float v) -> int {
+            float precise_angle = (v - min_v) * 180.0f / (float)(max_v - min_v);
+            return (int)(precise_angle * 10.0f + 0.5f) / 10;
+          };
+
+          bool show_segment = false;
+          if (mode == "heat") {
+            int low_scaled = lv_arc_get_value(id(thermostat_arc_base_heat));
+            show_segment = (current_scaled < low_scaled - 0.1f * mseg);
+          } else {
+            // For other modes, no segment
+            show_segment = false;
+          }
+
+          if (show_segment) {
+            lv_obj_clear_flag(id(thermostat_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(thermostat_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+            int low_scaled = lv_arc_get_value(id(thermostat_arc_base_heat));
+            float a_start = angle_for_precise((float)current_scaled);
+            float a_end = angle_for_precise((float)low_scaled);
+            if (a_end < a_start + 1.0f) a_end = a_start + 1.0f;
+            lv_arc_set_start_angle(id(thermostat_arc_segment_heat), (int)a_start);
+            lv_arc_set_end_angle(id(thermostat_arc_segment_heat), (int)a_end);
+            lv_arc_set_value(id(thermostat_arc_dot_heat), current_scaled);
+          } else {
+            lv_obj_add_flag(id(thermostat_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(thermostat_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+          }
+
+  - id: thermostat_update_active_arc_layer
+    then:
+      - lambda: |-
+          // Make heat arc clickable
+          lv_obj_add_flag(id(thermostat_arc_base_heat), LV_OBJ_FLAG_CLICKABLE);
+          lv_obj_add_flag(id(thermostat_arc_base_heat), LV_OBJ_FLAG_ADV_HITTEST);
+
+          // Bring to foreground
+          lv_obj_move_foreground(id(thermostat_arc_background));
+          lv_obj_move_foreground(id(thermostat_arc_current_temperature));
+          lv_obj_move_foreground(id(thermostat_arc_knob));
+          lv_obj_move_foreground(id(thermostat_arc_base_heat));
+          lv_obj_move_foreground(id(thermostat_arc_segment_heat));
+          lv_obj_move_foreground(id(thermostat_arc_dot_heat));
+          lv_obj_move_foreground(id(thermostat_arc_knob_heat));
+
+  - id: thermostat_update_adjust_buttons_color
+    then:
+      - lambda: |-
+          std::string mode = id(thermostat_sensor_state).state;
+          lv_color_t color = (mode == "heat") ? lv_color_hex(0xFF6600) : lv_color_hex(0x9BA2BC);
+          lv_obj_set_style_text_color(id(thermostat_plus_label), color, 0);
+          lv_obj_set_style_text_color(id(thermostat_minus_label), color, 0);

@@ -1,0 +1,1704 @@
+# fan_simplified.yaml
+
+# This approach consolidates the logic for multiple fans using a single set of
+# template sensors that switch based on the 'current_fan_index', similar to the thermostat.
+
+substitutions: !include substitutions.yaml
+
+globals:
+  # 1. Global variables for friendly names
+  - id: fan_name_1_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+  - id: fan_name_2_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  # 2. Index tracking
+  - id: current_fan_index
+    type: int
+    initial_value: '1'
+    restore_value: no
+
+  - id: current_fan_entity
+    type: std::string
+    restore_value: false
+    initial_value: '"${fan_entity_1}"'
+
+  # 3. Global states for the UI to read
+  - id: fan_supported_features_stored
+    type: int
+    restore_value: no
+    initial_value: '63'
+
+  - id: fan_percentage_step
+    type: float
+    restore_value: no
+    initial_value: '1.0'
+
+  - id: fan_current_percentage
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: fan_is_animating
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+sensor:
+  ################################################################
+  # CONSOLIDATED TEMPLATE SENSORS
+  ################################################################
+
+  # Template aggregator for percentage (speed)
+  - platform: template
+    id: fan_sensor_percentage
+    internal: true
+    lambda: |-
+      auto get_percentage = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(fan_percentage_1).state;
+          case 2: return id(fan_percentage_2).state;
+          default: return {};
+        }
+      };
+      return get_percentage(id(current_fan_index));
+    on_value:
+      - lambda: |-
+          id(fan_current_percentage) = int(x);
+      - lvgl.arc.update:
+          id: fan_arc
+          value: !lambda return int(x);
+          clickable: true
+          indicator:
+            arc_color: color_green
+      - lvgl.label.update:
+          id: fan_percentage_label
+          text: !lambda |-
+            static char buf[8];
+            snprintf(buf, sizeof(buf), "%.0f%%", x);
+            return buf;
+      - if:
+          condition:
+            lambda: 'return id(fan_state_sensor).state == "on";'
+          then:
+            - script.execute: fan_update_animation_speed
+
+  # Template aggregator for percentage_step
+  - platform: template
+    id: fan_sensor_percentage_step
+    internal: true
+    lambda: |-
+      auto get_step = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(fan_percentage_step_1).state;
+          case 2: return id(fan_percentage_step_2).state;
+          default: return {};
+        }
+      };
+      return get_step(id(current_fan_index));
+    on_value:
+      - lambda: |-
+          id(fan_percentage_step) = x;
+
+  # Template aggregator for supported_features
+  - platform: template
+    id: fan_sensor_supported_features
+    internal: true
+    lambda: |-
+      auto get_features = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(fan_supported_features_1).state;
+          case 2: return id(fan_supported_features_2).state;
+          default: return {};
+        }
+      };
+      return get_features(id(current_fan_index));
+    on_value:
+      - lambda: |-
+          ESP_LOGD("fan", "Supported features: %.0f", x);
+          id(fan_supported_features_stored) = x;
+
+          bool has_set_speed = (int(x) & 1) != 0;
+          bool has_oscillate = (int(x) & 2) != 0;
+          bool has_direction = (int(x) & 4) != 0;
+          bool has_preset_mode = (int(x) & 8) != 0;
+
+          // Arc visibility
+          if (has_set_speed) {
+            lv_obj_add_flag(id(fan_arc), LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_clear_flag(id(fan_arc), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_clear_flag(id(fan_arc), LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_add_flag(id(fan_arc), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          // Control buttons visibility
+          if (has_oscillate || has_direction) {
+            lv_obj_clear_flag(id(fan_oscillating_btn_bg), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(fan_direction_btn_bg), LV_OBJ_FLAG_HIDDEN);
+
+            if (has_oscillate) {
+              lv_obj_add_flag(id(fan_oscillating_btn), LV_OBJ_FLAG_CLICKABLE);
+              lv_obj_set_style_text_color(id(fan_oscillating_btn_icon), lv_color_hex(0x9DB4C0), 0);
+            } else {
+              lv_obj_clear_flag(id(fan_oscillating_btn), LV_OBJ_FLAG_CLICKABLE);
+              lv_obj_set_style_text_color(id(fan_oscillating_btn_icon), lv_color_hex(0x3D5A6C), 0);
+            }
+
+            if (has_direction) {
+              lv_obj_add_flag(id(fan_direction_btn), LV_OBJ_FLAG_CLICKABLE);
+              lv_obj_set_style_text_color(id(fan_direction_btn_icon), lv_color_hex(0x9DB4C0), 0);
+            } else {
+              lv_obj_clear_flag(id(fan_direction_btn), LV_OBJ_FLAG_CLICKABLE);
+              lv_obj_set_style_text_color(id(fan_direction_btn_icon), lv_color_hex(0x3D5A6C), 0);
+            }
+          } else {
+            lv_obj_add_flag(id(fan_oscillating_btn_bg), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(fan_direction_btn_bg), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          // Preset mode button
+          if (has_preset_mode) {
+            lv_obj_clear_flag(id(fan_controls_presets), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_controls_presets), LV_OBJ_FLAG_HIDDEN);
+          }
+
+  ################################################################
+  # INDIVIDUAL HA SENSORS
+  ################################################################
+
+  # Fan 1 Sensors
+  - platform: homeassistant
+    id: fan_percentage_1
+    entity_id: "${fan_entity_1}"
+    attribute: percentage
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: fan_sensor_percentage
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_percentage_step_1
+    entity_id: "${fan_entity_1}"
+    attribute: percentage_step
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: fan_sensor_percentage_step
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_supported_features_1
+    entity_id: "${fan_entity_1}"
+    attribute: supported_features
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: fan_sensor_supported_features
+                state: !lambda 'return x;'
+
+  # Fan 2 Sensors
+  - platform: homeassistant
+    id: fan_percentage_2
+    entity_id: "${fan_entity_2}"
+    attribute: percentage
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: fan_sensor_percentage
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_percentage_step_2
+    entity_id: "${fan_entity_2}"
+    attribute: percentage_step
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: fan_sensor_percentage_step
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_supported_features_2
+    entity_id: "${fan_entity_2}"
+    attribute: supported_features
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: fan_sensor_supported_features
+                state: !lambda 'return x;'
+
+text_sensor:
+  ################################################################
+  # CONSOLIDATED TEMPLATE TEXT SENSORS
+  ################################################################
+
+  # Template aggregator for state (on/off)
+  - platform: template
+    id: fan_state_sensor
+    internal: true
+    lambda: |-
+      auto get_state = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(fan_state_sensor_1).state;
+          case 2: return id(fan_state_sensor_2).state;
+          default: return "";
+        }
+      };
+      return get_state(id(current_fan_index));
+    on_value:
+      - script.execute: fan_translations
+      - if:
+          condition:
+            lambda: 'return x == "on";'
+          then:
+            - lvgl.obj.update:
+                id: fan_state_image_bg
+                bg_color: color_green
+            - script.execute: fan_start_animation
+          else:
+            - lvgl.obj.update:
+                id: fan_state_image_bg
+                bg_color: color_misty_blue
+            - script.execute: fan_stop_animation
+
+  # Template aggregator for preset_mode
+  - platform: template
+    id: fan_preset_mode_sensor
+    internal: true
+    lambda: |-
+      auto get_mode = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(fan_preset_mode_1).state;
+          case 2: return id(fan_preset_mode_2).state;
+          default: return "";
+        }
+      };
+      return get_mode(id(current_fan_index));
+    on_value:
+      - if:
+          condition:
+            lambda: 'return x == "none";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "eco";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "home";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "away";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "comfort";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "boost";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "sleep";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "smart";'
+          then:
+            - lvgl.label.update:
+                id: fan_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_home_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_comfort_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_sleep_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: fan_smart_preset_label
+                text_color: color_green
+
+  # Template aggregator for preset_modes
+  - platform: template
+    id: fan_preset_modes_sensor
+    internal: true
+    lambda: |-
+      auto get_modes = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(fan_preset_modes_1).state;
+          case 2: return id(fan_preset_modes_2).state;
+          default: return "";
+        }
+      };
+      return get_modes(id(current_fan_index));
+    on_value:
+      - script.execute: fan_update_preset_buttons_visibility
+
+  # Template aggregator for direction
+  - platform: template
+    id: fan_direction_sensor
+    internal: true
+    lambda: |-
+      auto get_direction = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(fan_direction_1).state;
+          case 2: return id(fan_direction_2).state;
+          default: return "";
+        }
+      };
+      return get_direction(id(current_fan_index));
+    on_value:
+      - if:
+          condition:
+            lambda: 'return x == "forward";'
+          then:
+            - lvgl.label.update:
+                id: fan_direction_btn_icon
+                text: "${rotate_right_icon}"
+          else:
+            - lvgl.label.update:
+                id: fan_direction_btn_icon
+                text: "${rotate_left_icon}"
+      - if:
+          condition:
+            lambda: 'return id(fan_state_sensor).state == "on";'
+          then:
+            - script.execute: fan_update_animation_direction
+
+  ################################################################
+  # INDIVIDUAL HA TEXT SENSORS
+  ################################################################
+
+  # Fan 1 Text Sensors
+  - platform: homeassistant
+    id: fan_name_1
+    entity_id: "${fan_entity_1}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(fan_name_1_stored) = x;
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - lvgl.label.update:
+                id: fan_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_state_sensor_1
+    entity_id: "${fan_entity_1}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_state_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_preset_mode_1
+    entity_id: "${fan_entity_1}"
+    attribute: preset_mode
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_preset_mode_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_preset_modes_1
+    entity_id: "${fan_entity_1}"
+    attribute: preset_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_preset_modes_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_direction_1
+    entity_id: "${fan_entity_1}"
+    attribute: direction
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_direction_sensor
+                state: !lambda 'return x;'
+
+  # Fan 2 Text Sensors
+  - platform: homeassistant
+    id: fan_name_2
+    entity_id: "${fan_entity_2}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(fan_name_2_stored) = x;
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - lvgl.label.update:
+                id: fan_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_state_sensor_2
+    entity_id: "${fan_entity_2}"
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_state_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_preset_mode_2
+    entity_id: "${fan_entity_2}"
+    attribute: preset_mode
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_preset_mode_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_preset_modes_2
+    entity_id: "${fan_entity_2}"
+    attribute: preset_modes
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_preset_modes_sensor
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: fan_direction_2
+    entity_id: "${fan_entity_2}"
+    attribute: direction
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: fan_direction_sensor
+                state: !lambda 'return x;'
+
+binary_sensor:
+  ################################################################
+  # CONSOLIDATED TEMPLATE BINARY SENSORS
+  ################################################################
+
+  # Template aggregator for oscillating
+  - platform: template
+    id: fan_oscillating_sensor
+    internal: true
+    lambda: |-
+      auto get_oscillating = [&](int idx) -> optional<bool> {
+        switch (idx) {
+          case 1: return id(fan_oscillating_1).state;
+          case 2: return id(fan_oscillating_2).state;
+          default: return {};
+        }
+      };
+      return get_oscillating(id(current_fan_index));
+    on_state:
+      - if:
+          condition:
+            lambda: 'return x;'
+          then:
+            - lvgl.label.update:
+                id: fan_oscillating_btn_icon
+                text: "${swing_on_icon}"
+          else:
+            - lvgl.label.update:
+                id: fan_oscillating_btn_icon
+                text: "${swing_off_icon}"
+
+  ################################################################
+  # INDIVIDUAL HA BINARY SENSORS
+  ################################################################
+
+  # Fan 1 Binary Sensors
+  - platform: homeassistant
+    id: fan_oscillating_1
+    entity_id: "${fan_entity_1}"
+    attribute: oscillating
+    internal: true
+    on_state:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 1;'
+          then:
+            - binary_sensor.template.publish:
+                id: fan_oscillating_sensor
+                state: !lambda 'return x;'
+
+  # Fan 2 Binary Sensors
+  - platform: homeassistant
+    id: fan_oscillating_2
+    entity_id: "${fan_entity_2}"
+    attribute: oscillating
+    internal: true
+    on_state:
+      - if:
+          condition:
+            lambda: 'return id(current_fan_index) == 2;'
+          then:
+            - binary_sensor.template.publish:
+                id: fan_oscillating_sensor
+                state: !lambda 'return x;'
+
+lvgl:
+  ################################################################
+  # FAN SELECT WIDGET (TOP LAYER)
+  ################################################################
+  top_layer:
+    widgets:
+      - obj:
+          id: fan_select_widget
+          hidden: true
+          x: -40
+          y: -40
+          width: 300
+          height: 110
+          align: top_left
+          pad_all: 0
+          bg_color: color_slate_blue_gray
+          bg_opa: cover
+          border_opa: transp
+          border_width: 0
+          shadow_color: color_black
+          shadow_spread: 3
+          shadow_width: 8
+          scrollable: false
+          radius: 40
+          widgets:
+            - obj:
+                id: fan_select_widget_cont
+                x: -10
+                y: -5
+                width: 240
+                height: 60
+                align: bottom_right
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_evenly
+                  flex_align_cross: center
+                  flex_align_track: center
+                  flex_flow: row_wrap
+                widgets:
+                  - obj:
+                      id: fan_btn_1
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: fan_icon_label_1
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${fan_icon_1}"
+                      on_press:
+                        - script.execute:
+                            id: fan_set_index
+                            index: 1
+                  - obj:
+                      id: fan_btn_2
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: fan_icon_label_2
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${fan_icon_2}"
+                      on_press:
+                        - script.execute:
+                            id: fan_set_index
+                            index: 2
+
+  ################################################################
+  # CONSOLIDATED FAN PAGE
+  ################################################################
+  pages:
+    - id: fan_page
+      bg_color: color_black
+      scrollable: false
+      on_load:
+        - lambda: |-
+            int fans = ${fans_amount};
+            if (fans >= 2) {
+              lv_obj_clear_flag(id(fan_select_widget), LV_OBJ_FLAG_HIDDEN);
+            }
+        # Optional: Add a short delay if needed for smooth transitions
+        # - delay: 250ms  # Uncomment if you see flickering
+        - script.execute:
+            id: fan_set_index
+            index: 1
+
+      widgets:
+        - label:
+            id: fan_name_label
+            y: -30
+            x: 0
+            height: 40
+            width: 240
+            long_mode: dot
+            align: bottom_left
+            text_font: nunito_20
+            text_align: center
+            text_color: color_misty_blue
+            text: "---"
+
+        - obj:
+            id: fan_main_background
+            y: 60
+            width: 440
+            height: 180
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              # PRESETS CONTAINER
+              - obj:
+                  id: fan_controls_presets
+                  width: 400
+                  height: 40
+                  align: top_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  layout:
+                    type: flex
+                    flex_flow: row
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    # ECO PRESET
+                    - obj:
+                        id: fan_eco_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_eco_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${eco_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: eco
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    # HOME PRESET
+                    - obj:
+                        id: fan_home_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_home_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${home_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: home
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    # AWAY PRESET
+                    - obj:
+                        id: fan_away_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_away_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${away_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: away
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    # COMFORT PRESET
+                    - obj:
+                        id: fan_comfort_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_comfort_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${comfort_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: comfort
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    # BOOST PRESET
+                    - obj:
+                        id: fan_boost_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_boost_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${boost_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: boost
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    # SLEEP PRESET
+                    - obj:
+                        id: fan_sleep_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_sleep_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${sleep_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: sleep
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    # SMART PRESET
+                    - obj:
+                        id: fan_smart_preset_btn
+                        hidden: true
+                        width: 35
+                        height: 35
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_smart_preset_label
+                              align: center
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${smart_preset_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: fan.set_preset_mode
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                preset_mode: smart
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+              - obj:
+                  id: fan_state_widget
+                  width: 440
+                  height: 100
+                  align: center
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    # ICON
+                    - obj:
+                        id: fan_state_image_bg
+                        x: 20
+                        width: 80
+                        height: 80
+                        align: left_mid
+                        bg_color: color_misty_blue
+                        bg_opa: 20%
+                        border_opa: transp
+                        shadow_opa: transp
+                        radius: 60
+                        widgets:
+                          - image:
+                              id: fan_state_image
+                              x: 0
+                              y: 0
+                              align: center
+                              src: fan_misty_image
+
+                    # STATE INFO
+                    - obj:
+                        width: 300
+                        height: 120
+                        align: right_mid
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        radius: 10
+                        widgets:
+                          - label:
+                              id: fan_state_label
+                              y: -5
+                              height: 40
+                              width: 260
+                              long_mode: DOT
+                              align: CENTER
+                              text_color: color_misty_blue
+                              text_font: nunito_20
+                              text: "Off"
+                          - label:
+                              id: fan_percentage_label
+                              y: 25
+                              height: 40
+                              width: 260
+                              align: CENTER
+                              text_color: color_misty_blue
+                              text_font: nunito_18
+                              text: "100%"
+
+        - obj:
+            id: fan_primary_buttons_background
+            y: 250
+            width: 440
+            height: 100
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  id: fan_primary_buttons_controls
+                  width: 440
+                  height: 100
+                  align: center
+                  clickable: false
+                  scrollable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    # DIRECTION BUTTON
+                    - obj:
+                        id: fan_direction_btn_bg
+                        x: 30
+                        width: 90
+                        height: 90
+                        align: left_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        shadow_opa: transp
+                        border_opa: transp
+                        widgets:
+                          - button:
+                              id: fan_direction_btn
+                              width: 70
+                              height: 70
+                              align: center
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - homeassistant.action:
+                                    action: fan.set_direction
+                                    data:
+                                      entity_id: !lambda 'return id(current_fan_entity);'
+                                      direction: !lambda |-
+                                        return (id(fan_direction_sensor).state == "forward") ? "reverse" : "forward";
+                                    data_template: {}
+                                    variables: {}
+                                    capture_response: false
+                          - obj:
+                              width: 65
+                              height: 65
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    id: fan_direction_btn_icon
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${rotate_left_icon}"
+
+                    # OSCILLATING BUTTON
+                    - obj:
+                        id: fan_oscillating_btn_bg
+                        x: -30
+                        width: 90
+                        height: 90
+                        align: right_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        shadow_opa: transp
+                        border_opa: transp
+                        widgets:
+                          - button:
+                              id: fan_oscillating_btn
+                              width: 70
+                              height: 70
+                              align: center
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - homeassistant.action:
+                                    action: fan.oscillate
+                                    data:
+                                      entity_id: !lambda 'return id(current_fan_entity);'
+                                      oscillating: !lambda |-
+                                        return id(fan_oscillating_sensor).state ? "false" : "true";
+                                    data_template: {}
+                                    variables: {}
+                                    capture_response: false
+                          - obj:
+                              width: 65
+                              height: 65
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    id: fan_oscillating_btn_icon
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${swing_off_icon}"
+
+        # CIRCLE WITH ARC
+        - obj:
+            id: fan_circle_background
+            y: 60
+            width: 150
+            height: 150
+            align: center
+            clickable: false
+            radius: 75
+            pad_all: 0
+            bg_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  width: 100
+                  height: 100
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+
+              - obj:
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        min_value: 0
+                        max_value: 100
+                        start_angle: 0
+                        end_angle: 360
+                        rotation: 0
+                        arc_width: 5
+                        arc_color: color_steel_blue
+                        arc_rounded: false
+                        indicator:
+                          arc_width: 5
+                          arc_opa: transp
+                        knob:
+                          bg_opa: transp
+                    - arc:
+                        id: fan_arc
+                        clickable: true
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 130
+                        height: 130
+                        min_value: 0
+                        max_value: 100
+                        start_angle: 0
+                        end_angle: 270
+                        rotation: 135
+                        arc_width: 5
+                        arc_color: color_steel_blue
+                        arc_rounded: false
+                        indicator:
+                          arc_width: 5
+                          arc_color: color_steel_blue
+                        knob:
+                          bg_opa: transp
+                        on_value:
+                          - lvgl.label.update:
+                              id: fan_percentage_label
+                              text: !lambda |-
+                                static char buffer[16];
+                                snprintf(buffer, sizeof(buffer), "%d%%", int(x));
+                                return buffer;
+                        on_release:
+                          - homeassistant.action:
+                              action: fan.set_percentage
+                              data:
+                                entity_id: !lambda 'return id(current_fan_entity);'
+                                percentage: !lambda |-
+                                  int raw_value = int(x);
+                                  int rounded_value = raw_value;
+                                  float step = id(fan_percentage_step);
+                                  if (step > 1.0) {
+                                    int num_steps = round(raw_value / step);
+                                    rounded_value = round(num_steps * step);
+                                    if (rounded_value < 0) rounded_value = 0;
+                                    if (rounded_value > 100) rounded_value = 100;
+                                  }
+                                  return to_string(rounded_value);
+                              data_template: {}
+                              variables: {}
+                              capture_response: false
+
+                    - obj:
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        widgets:
+                          - label:
+                              id: fan_switch_icon
+                              align: CENTER
+                              text_color: color_misty_blue
+                              text_font: mdi_icons_52
+                              text: "${power_icon}"
+                              on_press:
+                                - homeassistant.action:
+                                    action: !lambda |-
+                                      return (id(fan_state_sensor).state == "off") ? "fan.turn_on" : "fan.turn_off";
+                                    data:
+                                      entity_id: !lambda 'return id(current_fan_entity);'
+                                    data_template: {}
+                                    variables: {}
+                                    capture_response: false
+
+        # BACK BUTTON
+        - obj:
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_mid
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15
+            on_click:
+              - lvgl.widget.hide: fan_select_widget
+              - lvgl.page.show: home_page
+
+script:
+  # Script to cycle through fans
+  - id: fan_cycle
+    then:
+      - lambda: |-
+          int next_idx = id(current_fan_index) + 1;
+          if (next_idx > ${fans_amount}) next_idx = 1;
+
+          std::string next_entity = "";
+          std::string next_name = "";
+          switch (next_idx) {
+            case 1:
+              next_entity = "${fan_entity_1}";
+              next_name = id(fan_name_1_stored);
+              break;
+            case 2:
+              next_entity = "${fan_entity_2}";
+              next_name = id(fan_name_2_stored);
+              break;
+          }
+
+          id(current_fan_index) = next_idx;
+          id(current_fan_entity) = next_entity;
+
+          lv_label_set_text(id(fan_name_label), next_name.c_str());
+
+          // Force refresh of aggregated sensors
+          if (id(fan_sensor_percentage).has_state()) {
+            id(fan_sensor_percentage).publish_state(id(fan_sensor_percentage).state);
+          }
+          if (id(fan_sensor_supported_features).has_state()) {
+            id(fan_sensor_supported_features).publish_state(id(fan_sensor_supported_features).state);
+          }
+          id(fan_state_sensor).publish_state(id(fan_state_sensor).state);
+          id(fan_preset_mode_sensor).publish_state(id(fan_preset_mode_sensor).state);
+
+  # Script to set fan index (called from select.yaml buttons)
+  - id: fan_set_index
+    parameters:
+      index: int
+    then:
+      - lambda: |-
+          const int num = ${fans_amount};
+          if (index > 0 && index <= num) {
+            int next_idx = index;
+            std::string next_entity = "";
+            std::string next_name = "";
+            switch (next_idx) {
+              case 1:
+                next_entity = "${fan_entity_1}";
+                next_name = id(fan_name_1_stored);
+                break;
+              case 2:
+                next_entity = "${fan_entity_2}";
+                next_name = id(fan_name_2_stored);
+                break;
+            }
+
+            id(current_fan_index) = next_idx;
+            id(current_fan_entity) = next_entity;
+
+            lv_label_set_text(id(fan_name_label), next_name.c_str());
+
+            // Reset all button backgrounds to transparent
+            lv_obj_set_style_bg_opa(id(fan_btn_1), LV_OPA_TRANSP, 0);
+            lv_obj_set_style_bg_opa(id(fan_btn_2), LV_OPA_TRANSP, 0);
+
+            // Reset all icon colors to misty_blue
+            lv_obj_set_style_text_color(id(fan_icon_label_1), color_misty_blue, 0);
+            lv_obj_set_style_text_color(id(fan_icon_label_2), color_misty_blue, 0);
+
+            // Highlight the selected button
+            switch (index) {
+              case 1:
+                lv_obj_set_style_bg_opa(id(fan_btn_1), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(fan_btn_1), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(fan_icon_label_1), color_white, 0);
+                break;
+              case 2:
+                lv_obj_set_style_bg_opa(id(fan_btn_2), LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_color(id(fan_btn_2), color_steel_blue, 0);
+                lv_obj_set_style_text_color(id(fan_icon_label_2), color_white, 0);
+                break;
+            }
+
+            // Force refresh
+            if (id(fan_sensor_percentage).has_state()) {
+              id(fan_sensor_percentage).publish_state(id(fan_sensor_percentage).state);
+            }
+            if (id(fan_sensor_supported_features).has_state()) {
+              id(fan_sensor_supported_features).publish_state(id(fan_sensor_supported_features).state);
+            }
+            id(fan_state_sensor).publish_state(id(fan_state_sensor).state);
+            id(fan_preset_mode_sensor).publish_state(id(fan_preset_mode_sensor).state);
+          }
+
+  # Animation scripts
+  - id: fan_start_animation
+    then:
+      - lambda: |-
+          ESP_LOGD("fan", "START_ANIMATION script called");
+
+          if (id(fan_is_animating)) {
+            ESP_LOGD("fan", "Animation already running, skipping");
+            return;
+          }
+
+          auto img_widget = id(fan_state_image);
+          lv_obj_t* img = img_widget;
+
+          lv_anim_del(img, nullptr);
+          lv_img_set_src(img, id(fan_green_image));
+
+          int percentage = id(fan_current_percentage);
+          if (percentage < 1) percentage = 100;
+
+          int anim_time = (int)(3000.0 / (percentage / 33.0));
+          if (anim_time < 500) anim_time = 500;
+          if (anim_time > 5000) anim_time = 5000;
+
+          bool is_forward = id(fan_direction_sensor).state == "forward";
+          int start_angle = is_forward ? 0 : 3600;
+          int end_angle = is_forward ? 3600 : 0;
+
+          lv_anim_t anim_rotation;
+          lv_anim_init(&anim_rotation);
+          lv_anim_set_var(&anim_rotation, img);
+          lv_anim_set_values(&anim_rotation, start_angle, end_angle);
+          lv_anim_set_time(&anim_rotation, anim_time);
+          lv_anim_set_repeat_count(&anim_rotation, LV_ANIM_REPEAT_INFINITE);
+          lv_anim_set_exec_cb(&anim_rotation, [](void * var, int32_t v) {
+            lv_img_set_angle((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_rotation, lv_anim_path_linear);
+          lv_anim_start(&anim_rotation);
+
+          id(fan_is_animating) = true;
+
+  - id: fan_stop_animation
+    then:
+      - lambda: |-
+          ESP_LOGD("fan", "STOP_ANIMATION script called");
+
+          auto img_widget = id(fan_state_image);
+          lv_obj_t* img = img_widget;
+
+          lv_anim_del(img, nullptr);
+          lv_img_set_src(img, id(fan_misty_image));
+          lv_img_set_angle(img, 0);
+
+          id(fan_is_animating) = false;
+
+  - id: fan_update_animation_speed
+    then:
+      - lambda: |-
+          if (!id(fan_is_animating)) {
+            return;
+          }
+          id(fan_is_animating) = false;
+      - script.execute: fan_start_animation
+
+  - id: fan_update_animation_direction
+    then:
+      - lambda: |-
+          if (!id(fan_is_animating)) {
+            return;
+          }
+          id(fan_is_animating) = false;
+      - script.execute: fan_start_animation
+
+  - id: fan_translations
+    then:
+      - lvgl.label.update:
+          id: fan_state_label
+          text: !lambda |-
+            std::string key = "fan.state." + id(fan_state_sensor).state;
+            return id(i18n_translations).translate(key);
+
+  - id: fan_update_preset_buttons_visibility
+    then:
+      - lambda: |-
+          std::string presets_str = id(fan_preset_modes_sensor).state;
+          ESP_LOGD("fan", "Available presets: %s", presets_str.c_str());
+
+          // Toggle visibility for each preset button
+          if (presets_str.find("eco") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_eco_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_eco_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          if (presets_str.find("home") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_home_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_home_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          if (presets_str.find("away") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_away_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_away_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          if (presets_str.find("comfort") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_comfort_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_comfort_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          if (presets_str.find("boost") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_boost_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_boost_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          if (presets_str.find("sleep") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_sleep_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_sleep_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          if (presets_str.find("smart") != std::string::npos) {
+            lv_obj_clear_flag(id(fan_smart_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_smart_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }

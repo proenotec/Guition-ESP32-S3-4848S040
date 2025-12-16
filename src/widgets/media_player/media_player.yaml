@@ -86,7 +86,7 @@ sensor:
     id: media_player_media_position_sensor
     entity_id: "${media_player_entity}"
     attribute: media_position
-    on_value: 
+    on_value:
       - if:
           condition:
             lambda: 'return !id(duration_slider_user_interaction);'
@@ -125,12 +125,12 @@ text_sensor:
           condition:
             lambda: 'return x == "paused";'
           then:
-            - lvgl.label.update: 
+            - lvgl.label.update:
                 id: media_player_state_label
                 x: 0
                 text: "${play_icon}"
           else:
-            - lvgl.label.update: 
+            - lvgl.label.update:
                 id: media_player_state_label
                 x: 0
                 text: "${pause_icon}"
@@ -192,7 +192,7 @@ text_sensor:
           std::vector<std::string> sl;
           std::string input = x;
           bool has_sources = false;
-          
+
           if (!input.empty() && input != "unknown" && input != "unavailable") {
             input.erase(std::remove(input.begin(), input.end(), '['), input.end());
             input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
@@ -208,20 +208,20 @@ text_sensor:
             }
             has_sources = !sl.empty();
           }
-          
+
           id(source_list) = sl;
           id(source_available) = has_sources;
-          
+
           int sel = id(source_list_index);
           if (sel < 0 || sel >= (int)sl.size()) sel = 0;
           id(source_list_index) = sel;
-          
+
           ESP_LOGI("MP_PANEL","Parsed %d sources (sel=%d, available=%d)", (int)sl.size(), sel, has_sources);
-          
-          // Обновляем состояние кнопки
+
+          // Update button state
           lv_obj_t* btn = id(media_player_source_btn);
           lv_obj_t* label = id(media_player_source_label);
-          
+
           if (has_sources) {
             lv_obj_clear_state(btn, LV_STATE_DISABLED);
             lv_obj_set_style_opa(btn, LV_OPA_COVER, 0);
@@ -444,7 +444,7 @@ lvgl:
                               clickable: false
                               radius: 45
                               pad_all: 0
-                              bg_opa: transp 
+                              bg_opa: transp
                               border_opa: transp
                               shadow_width: 4
                               shadow_color: 0xFFFFFF
@@ -511,7 +511,7 @@ lvgl:
                               clickable: false
                               radius: 45
                               pad_all: 0
-                              bg_opa: transp 
+                              bg_opa: transp
                               border_opa: transp
                               shadow_width: 4
                               shadow_color: 0xFFFFFF
@@ -615,7 +615,7 @@ lvgl:
                               text: "${repeat_all_icon}"
                               on_press:
                                 - script.execute: handle_repeat_press_script
-                    
+
                     # source
                     - obj:
                         id: media_player_source_btn
@@ -642,7 +642,7 @@ lvgl:
                               text: "${media_source}"
                         on_click:
                           - lambda: |-
-                              // Проверяем доступность источников
+                              // Check source availability
                               if (!id(source_available)) return;
                               if (id(is_animating)) return;
                               id(is_animating) = true;
@@ -749,7 +749,7 @@ lvgl:
                                     action: media_player.volume_up
                                     data:
                                       entity_id: "${media_player_entity}"
-                    
+
 
         # CIRCLE
         - obj:
@@ -858,6 +858,7 @@ lvgl:
               flex_align_main: center
               flex_align_cross: center
               flex_align_track: center
+            widgets: []
 
         # back
         - obj:
@@ -882,7 +883,7 @@ lvgl:
                   border_opa: transp
                   border_width: 0
                   shadow_opa: transp
-                  radius: 15 
+                  radius: 15
             on_click:
               - lvgl.page.show: home_page
 
@@ -1053,9 +1054,9 @@ script:
   - id: animate_mp_to_source
     then:
       - lambda: |-
-          // ШАГ 1: Кнопки уезжают, круг вниз, виджет исчезает
+          // STEP 1: Buttons move away, circle down, widget disappears
           lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade, anim_secondary_btns_fade;
-          
+
           lv_anim_init(&anim_prev_btn);
           lv_anim_set_var(&anim_prev_btn, id(media_player_prev_btn));
           lv_anim_set_values(&anim_prev_btn, 30, -150);
@@ -1065,7 +1066,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_prev_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_prev_btn);
-          
+
           lv_anim_init(&anim_next_btn);
           lv_anim_set_var(&anim_next_btn, id(media_player_next_btn));
           lv_anim_set_values(&anim_next_btn, -30, 150);
@@ -1075,7 +1076,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_next_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_next_btn);
-          
+
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(media_player_circle_background));
           lv_anim_set_values(&anim_circle, 40, 400);
@@ -1085,7 +1086,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
+
           lv_anim_init(&anim_main_fade);
           lv_anim_set_var(&anim_main_fade, id(media_widget_background));
           lv_anim_set_values(&anim_main_fade, 255, 0);
@@ -1107,11 +1108,11 @@ script:
           // lv_anim_start(&anim_secondary_btns_fade);
 
       - delay: 600ms
-      
+
       - lambda: |-
-          // ШАГ 2: Средняя панель расширяется и поднимается + радиус -> 0
+          // STEP 2: Middle panel expands and moves up + radius -> 0
           lv_anim_t anim_middle_expand, anim_middle_move_up, anim_radius;
-          
+
           lv_anim_init(&anim_middle_expand);
           lv_anim_set_var(&anim_middle_expand, id(media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_expand, 100, 160);
@@ -1121,7 +1122,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_expand);
-          
+
           lv_anim_init(&anim_middle_move_up);
           lv_anim_set_var(&anim_middle_move_up, id(media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_move_up, 230, 200);
@@ -1131,8 +1132,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_move_up, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_up);
-          
-          // ✅ АНИМАЦИЯ РАДИУСА (20 -> 0)
+
+          // ✅ RADIUS ANIMATION (20 -> 0)
           lv_anim_init(&anim_radius);
           lv_anim_set_var(&anim_radius, id(media_player_primary_controls_background));
           lv_anim_set_values(&anim_radius, 20, 0);
@@ -1144,14 +1145,14 @@ script:
           lv_anim_start(&anim_radius);
 
       - delay: 350ms
-      
+
       - lambda: |-
-          // ШАГ 3: Показываем панель источников
+          // STEP 3: Show source panel
           lv_obj_clear_flag(id(media_player_source_panel), LV_OBJ_FLAG_HIDDEN);
           lv_obj_set_style_opa(id(media_player_source_panel), 0, 0);
-          
+
           lv_anim_t anim_source_panel_fade;
-          
+
           lv_anim_init(&anim_source_panel_fade);
           lv_anim_set_var(&anim_source_panel_fade, id(media_player_source_panel));
           lv_anim_set_values(&anim_source_panel_fade, 0, 255);
@@ -1163,7 +1164,7 @@ script:
           lv_anim_start(&anim_source_panel_fade);
 
       - delay: 400ms
-      
+
       - lambda: |-
           id(is_animating) = false;
 
@@ -1173,10 +1174,10 @@ script:
     then:
       - lambda: |-
           id(is_animating) = true;
-          
-          // ШАГ 1: Скрываем панель источников
+
+          // STEP 1: Hide source panel
           lv_anim_t anim_source_panel_fade;
-          
+
           lv_anim_init(&anim_source_panel_fade);
           lv_anim_set_var(&anim_source_panel_fade, id(media_player_source_panel));
           lv_anim_set_values(&anim_source_panel_fade, 255, 0);
@@ -1191,11 +1192,11 @@ script:
           lv_anim_start(&anim_source_panel_fade);
 
       - delay: 400ms
-      
+
       - lambda: |-
-          // ШАГ 2: Средняя панель сжимается и опускается + радиус -> 20
+          // STEP 2: Middle panel shrinks and moves down + radius -> 20
           lv_anim_t anim_middle_shrink, anim_middle_move_down, anim_radius;
-          
+
           lv_anim_init(&anim_middle_shrink);
           lv_anim_set_var(&anim_middle_shrink, id(media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_shrink, 160, 100);
@@ -1205,7 +1206,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_shrink);
-          
+
           lv_anim_init(&anim_middle_move_down);
           lv_anim_set_var(&anim_middle_move_down, id(media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_move_down, 200, 230);
@@ -1215,8 +1216,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_down);
-          
-          // ✅ АНИМАЦИЯ РАДИУСА (0 -> 20)
+
+          // ✅ RADIUS ANIMATION (0 -> 20)
           lv_anim_init(&anim_radius);
           lv_anim_set_var(&anim_radius, id(media_player_primary_controls_background));
           lv_anim_set_values(&anim_radius, 0, 20);
@@ -1228,11 +1229,11 @@ script:
           lv_anim_start(&anim_radius);
 
       - delay: 350ms
-      
+
       - lambda: |-
-          // ШАГ 3: Кнопки возвращаются, круг вверх, виджет появляется
+          // STEP 3: Buttons return, circle up, widget appears
           lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade, anim_secondary_btns_fade;
-          
+
           lv_anim_init(&anim_prev_btn);
           lv_anim_set_var(&anim_prev_btn, id(media_player_prev_btn));
           lv_anim_set_values(&anim_prev_btn, -150, 30);
@@ -1242,7 +1243,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_prev_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_prev_btn);
-          
+
           lv_anim_init(&anim_next_btn);
           lv_anim_set_var(&anim_next_btn, id(media_player_next_btn));
           lv_anim_set_values(&anim_next_btn, 150, -30);
@@ -1252,7 +1253,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_next_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_next_btn);
-          
+
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(media_player_circle_background));
           lv_anim_set_values(&anim_circle, 400, 40);
@@ -1262,7 +1263,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
+
           lv_anim_init(&anim_main_fade);
           lv_anim_set_var(&anim_main_fade, id(media_widget_background));
           lv_anim_set_values(&anim_main_fade, 0, 255);
@@ -1284,7 +1285,7 @@ script:
           // lv_anim_start(&anim_secondary_btns_fade);
 
       - delay: 600ms
-      
+
       - lambda: |-
           id(is_animating) = false;
 

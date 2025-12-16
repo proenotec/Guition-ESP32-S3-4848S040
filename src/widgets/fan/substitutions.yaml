@@ -1,0 +1,7 @@
+fans_amount: "2" # choice 1 or 2
+
+fan_entity_1: "fan.petinfan_1"
+fan_entity_2: "fan.petinfan_2"
+
+fan_icon_1: "\U000F02E3"  # mdi:bed (Bedroom)
+fan_icon_2: "\U000F04B9"  # mdi:sofa (Living Room)

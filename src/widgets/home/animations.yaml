@@ -1,6 +1,6 @@
 script:
 
-  # Главный скрипт переключения режимов
+  # Main script for switching modes
   - id: switch_to_mode
     parameters:
       target_mode: int
@@ -47,9 +47,9 @@ script:
   - id: animate_home_to_weather
     then:
       - lambda: |-
-          // Одновременно: кнопки уезжают, круг вниз, datetime исчезает
+          // Simultaneously: buttons move away, circle down, datetime disappears
           lv_anim_t anim_lights_btn, anim_devices_btn, anim_circle, anim_datetime_fade;
-          
+
           lv_anim_init(&anim_lights_btn);
           lv_anim_set_var(&anim_lights_btn, id(home_lights_btn_bg));
           lv_anim_set_values(&anim_lights_btn, 30, -150);
@@ -59,7 +59,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_lights_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_lights_btn);
-          
+
           lv_anim_init(&anim_devices_btn);
           lv_anim_set_var(&anim_devices_btn, id(home_devices_btn_bg));
           lv_anim_set_values(&anim_devices_btn, -30, 150);
@@ -69,7 +69,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_devices_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_devices_btn);
-          
+
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(circle_widget_background));
           lv_anim_set_values(&anim_circle, 100, 400);
@@ -79,7 +79,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
+
           lv_anim_init(&anim_datetime_fade);
           lv_anim_set_var(&anim_datetime_fade, id(datetime_widget));
           lv_anim_set_values(&anim_datetime_fade, 255, 0);
@@ -92,9 +92,9 @@ script:
 
       - delay: 600ms
       - lambda: |-
-          // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
+          // Simultaneously change the sizes of containers AND raise middle_widget_background
           lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
-          
+
           lv_anim_init(&anim_main_shrink);
           lv_anim_set_var(&anim_main_shrink, id(main_widget_background));
           lv_anim_set_values(&anim_main_shrink, 220, 120);
@@ -104,7 +104,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_shrink);
-          
+
           lv_anim_init(&anim_middle_expand);
           lv_anim_set_var(&anim_middle_expand, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_expand, 100, 200);
@@ -114,8 +114,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_expand);
-          
-          // Поднимаем middle_widget_background на 100px вверх
+
+          // Raise middle_widget_background by 100px up
           lv_anim_init(&anim_middle_move_up);
           lv_anim_set_var(&anim_middle_move_up, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_move_up, lv_obj_get_y(id(middle_widget_background)), lv_obj_get_y(id(middle_widget_background)) - 100);
@@ -128,15 +128,15 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // Плавно появляются weather виджеты
+          // Smoothly appear weather widgets
           lv_obj_clear_flag(id(middle_weather_controls), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(weather_widget), LV_OBJ_FLAG_HIDDEN);
-          
+
           lv_obj_set_style_opa(id(middle_weather_controls), 0, 0);
           lv_obj_set_style_opa(id(weather_widget), 0, 0);
-          
+
           lv_anim_t anim_weather_controls_fade, anim_weather_widget_fade;
-          
+
           lv_anim_init(&anim_weather_controls_fade);
           lv_anim_set_var(&anim_weather_controls_fade, id(middle_weather_controls));
           lv_anim_set_values(&anim_weather_controls_fade, 0, 255);
@@ -146,7 +146,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_controls_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_controls_fade);
-          
+
           lv_anim_init(&anim_weather_widget_fade);
           lv_anim_set_var(&anim_weather_widget_fade, id(weather_widget));
           lv_anim_set_values(&anim_weather_widget_fade, 0, 255);
@@ -162,13 +162,13 @@ script:
       - lambda: |-
           id(is_animating) = false;
 
-  # 2. WEATHER -> HOME (исправленный с обратными движениями)
+  # 2. WEATHER -> HOME (fixed with reverse movements)
   - id: animate_weather_to_home
     then:
       - lambda: |-
-          // Плавно исчезают weather виджеты
+          // Smoothly disappear weather widgets
           lv_anim_t anim_weather_controls_fade, anim_weather_widget_fade;
-          
+
           lv_anim_init(&anim_weather_controls_fade);
           lv_anim_set_var(&anim_weather_controls_fade, id(middle_weather_controls));
           lv_anim_set_values(&anim_weather_controls_fade, 255, 0);
@@ -181,7 +181,7 @@ script:
             lv_obj_add_flag(id(middle_weather_controls), LV_OBJ_FLAG_HIDDEN);
           });
           lv_anim_start(&anim_weather_controls_fade);
-          
+
           lv_anim_init(&anim_weather_widget_fade);
           lv_anim_set_var(&anim_weather_widget_fade, id(weather_widget));
           lv_anim_set_values(&anim_weather_widget_fade, 255, 0);
@@ -197,9 +197,9 @@ script:
 
       - delay: 400ms
       - lambda: |-
-          // Одновременно изменяем размеры контейнеров обратно И опускаем middle_widget_background
+          // Simultaneously change container sizes back AND lower middle_widget_background
           lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
-          
+
           lv_anim_init(&anim_main_expand);
           lv_anim_set_var(&anim_main_expand, id(main_widget_background));
           lv_anim_set_values(&anim_main_expand, 120, 220);
@@ -209,7 +209,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_expand);
-          
+
           lv_anim_init(&anim_middle_shrink);
           lv_anim_set_var(&anim_middle_shrink, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_shrink, 200, 100);
@@ -219,8 +219,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_shrink);
-          
-          // Опускаем middle_widget_background на 100px вниз (обратно)
+
+          // Lower middle_widget_background by 100px down (back)
           lv_anim_init(&anim_middle_move_down);
           lv_anim_set_var(&anim_middle_move_down, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_move_down, lv_obj_get_y(id(middle_widget_background)), lv_obj_get_y(id(middle_widget_background)) + 100);
@@ -235,9 +235,9 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // Одновременно: кнопки возвращаются, круг вверх, datetime появляется
+          // Simultaneously: buttons return, circle up, datetime appears
           lv_anim_t anim_lights_btn, anim_devices_btn, anim_circle, anim_datetime_fade;
-          
+
           lv_anim_init(&anim_lights_btn);
           lv_anim_set_var(&anim_lights_btn, id(home_lights_btn_bg));
           lv_anim_set_values(&anim_lights_btn, -150, 30);
@@ -247,7 +247,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_lights_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_lights_btn);
-          
+
           lv_anim_init(&anim_devices_btn);
           lv_anim_set_var(&anim_devices_btn, id(home_devices_btn_bg));
           lv_anim_set_values(&anim_devices_btn, 150, -30);
@@ -257,7 +257,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_devices_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_devices_btn);
-          
+
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(circle_widget_background));
           lv_anim_set_values(&anim_circle, 400, 100);
@@ -267,7 +267,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
+
           lv_anim_init(&anim_datetime_fade);
           lv_anim_set_var(&anim_datetime_fade, id(datetime_widget));
           lv_anim_set_values(&anim_datetime_fade, 0, 255);
@@ -288,7 +288,7 @@ script:
   - id: animate_home_to_info
     then:
       - lambda: |-
-          // weather_state_images уезжает вверх
+          // weather_state_images moves up
           lv_anim_t anim_weather_images;
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
@@ -299,8 +299,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_images, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_images);
-          
-          // weather_time_widget исчезает
+
+          // weather_time_widget disappears
           lv_anim_t anim_weather_time_fade;
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
@@ -311,8 +311,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
-          // datetime_widget исчезает
+
+          // datetime_widget disappears
           lv_anim_t anim_datetime_fade;
           lv_anim_init(&anim_datetime_fade);
           lv_anim_set_var(&anim_datetime_fade, id(datetime_widget));
@@ -323,8 +323,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_datetime_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_datetime_fade);
-          
-          // circle_home_widget исчезает
+
+          // circle_home_widget disappears
           lv_anim_t anim_circle_main_fade;
           lv_anim_init(&anim_circle_main_fade);
           lv_anim_set_var(&anim_circle_main_fade, id(circle_home_widget));
@@ -341,7 +341,7 @@ script:
           lv_obj_set_style_opa(id(circle_info_widget), 255, 0);
           lv_obj_set_style_opa(id(info_widget), 255, 0);
 
-          // Показываем info виджеты
+          // Show info widgets
           lv_obj_clear_flag(id(info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_info_widget), LV_OBJ_FLAG_HIDDEN);
 
@@ -354,25 +354,25 @@ script:
   - id: animate_info_to_home
     then:
       - lambda: |-
-          // Скрываем info виджеты
+          // Hide info widgets
           lv_obj_add_flag(id(info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_flag(id(circle_info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_home_widget), LV_OBJ_FLAG_HIDDEN);
       - delay: 150ms
       - lambda: |-
-          // weather_state_images возвращается (ВАЖНО: правильная позиция!)
+          // weather_state_images returns (IMPORTANT: correct position!)
           lv_anim_t anim_weather_images;
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
-          lv_anim_set_values(&anim_weather_images, -400, 15); // y: 15 - исходная позиция!
+          lv_anim_set_values(&anim_weather_images, -400, 15); // y: 15 - original position!
           lv_anim_set_time(&anim_weather_images, 600);
           lv_anim_set_exec_cb(&anim_weather_images, [](void * var, int32_t v) {
             lv_obj_set_y((lv_obj_t*)var, v);
           });
           lv_anim_set_path_cb(&anim_weather_images, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_images);
-          
-          // weather_time_widget появляется
+
+          // weather_time_widget appears
           lv_anim_t anim_weather_time_fade;
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
@@ -383,8 +383,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
-          // datetime_widget появляется
+
+          // datetime_widget appears
           lv_anim_t anim_datetime_fade;
           lv_anim_init(&anim_datetime_fade);
           lv_anim_set_var(&anim_datetime_fade, id(datetime_widget));
@@ -395,8 +395,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_datetime_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_datetime_fade);
-          
-          // circle_home_widget появляется
+
+          // circle_home_widget appears
           lv_anim_t anim_circle_main_fade;
           lv_anim_init(&anim_circle_main_fade);
           lv_anim_set_var(&anim_circle_main_fade, id(circle_home_widget));
@@ -413,11 +413,11 @@ script:
       - lambda: |-
           id(is_animating) = false;
 
-  # 5. HOME -> SETTINGS (исправленный с сбросом состояния)
+  # 5. HOME -> SETTINGS (fixed with state reset)
   - id: animate_home_to_settings
     then:
       - lambda: |-
-          // weather_state_images уезжает вверх
+          // weather_state_images moves up
           lv_anim_t anim_weather_images;
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
@@ -428,8 +428,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_images, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_images);
-          
-          // weather_time_widget исчезает
+
+          // weather_time_widget disappears
           lv_anim_t anim_weather_time_fade;
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
@@ -440,8 +440,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
-          // datetime_widget исчезает
+
+          // datetime_widget disappears
           lv_anim_t anim_datetime_fade;
           lv_anim_init(&anim_datetime_fade);
           lv_anim_set_var(&anim_datetime_fade, id(datetime_widget));
@@ -452,8 +452,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_datetime_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_datetime_fade);
-          
-          // circle_home_widget исчезает
+
+          // circle_home_widget disappears
           lv_anim_t anim_circle_main_fade;
           lv_anim_init(&anim_circle_main_fade);
           lv_anim_set_var(&anim_circle_main_fade, id(circle_home_widget));
@@ -467,25 +467,25 @@ script:
 
       - delay: 650ms
       - lambda: |-
-          // Показываем settings виджеты
+          // Show settings widgets
           lv_obj_clear_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
-          
-          // ВАЖНО: Сбрасываем состояние settings элементов для корректной анимации
+
+          // IMPORTANT: Reset the state of settings elements for correct animation
           lv_obj_set_style_opa(id(settings_widget), 255, 0);
           lv_obj_set_style_opa(id(circle_settings_widget), 255, 0);
           lv_obj_set_width(id(backlight_settings_brightness_background), 220);
           lv_obj_set_width(id(backlight_settings_sleep_time_background), 220);
-          
+
       - delay: 100ms
       - lambda: |-
-          // ФИНАЛЬНАЯ АНИМАЦИЯ: меняем цвет settings_widget и размеры элементов
+          // FINAL ANIMATION: change the color of settings_widget and sizes of elements
           lv_obj_set_style_bg_color(id(settings_widget), lv_color_hex(0x0d0d0d), 0);
           lv_obj_set_style_bg_opa(id(settings_widget), LV_OPA_COVER, 0);
-          
-          // Анимация изменения ширины элементов настроек
+
+          // Animation of changing the width of settings elements
           lv_anim_t anim_brightness_resize, anim_sleep_resize;
-          
+
           lv_anim_init(&anim_brightness_resize);
           lv_anim_set_var(&anim_brightness_resize, id(backlight_settings_brightness_background));
           lv_anim_set_values(&anim_brightness_resize, 220, 215);
@@ -495,7 +495,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_brightness_resize, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_brightness_resize);
-          
+
           lv_anim_init(&anim_sleep_resize);
           lv_anim_set_var(&anim_sleep_resize, id(backlight_settings_sleep_time_background));
           lv_anim_set_values(&anim_sleep_resize, 220, 215);
@@ -511,13 +511,13 @@ script:
       - lambda: |-
           id(is_animating) = false;
 
-  # 6. SETTINGS -> HOME (исправленный)
+  # 6. SETTINGS -> HOME (fixed)
   - id: animate_settings_to_home
     then:
       - lambda: |-
-          // 1. СНАЧАЛА возвращаем ширину элементов настроек
+          // 1. FIRST return the width of settings elements
           lv_anim_t anim_brightness_resize, anim_sleep_resize;
-          
+
           lv_anim_init(&anim_brightness_resize);
           lv_anim_set_var(&anim_brightness_resize, id(backlight_settings_brightness_background));
           lv_anim_set_values(&anim_brightness_resize, 215, 220);
@@ -527,7 +527,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_brightness_resize, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_brightness_resize);
-          
+
           lv_anim_init(&anim_sleep_resize);
           lv_anim_set_var(&anim_sleep_resize, id(backlight_settings_sleep_time_background));
           lv_anim_set_values(&anim_sleep_resize, 215, 220);
@@ -540,14 +540,14 @@ script:
 
       - delay: 500ms
       - lambda: |-
-          // 2. ТОЛЬКО ЗАТЕМ убираем цвет
+          // 2. ONLY THEN remove the color
           lv_obj_set_style_bg_opa(id(settings_widget), LV_OPA_TRANSP, 0);
 
       - delay: 100ms
       - lambda: |-
-          // 3. СНАЧАЛА полностью скрываем settings виджеты
+          // 3. FIRST completely hide settings widgets
           lv_anim_t anim_settings_fade, anim_circle_settings_fade;
-          
+
           lv_anim_init(&anim_settings_fade);
           lv_anim_set_var(&anim_settings_fade, id(settings_widget));
           lv_anim_set_values(&anim_settings_fade, 255, 0);
@@ -557,7 +557,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_settings_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_settings_fade);
-          
+
           lv_anim_init(&anim_circle_settings_fade);
           lv_anim_set_var(&anim_circle_settings_fade, id(circle_settings_widget));
           lv_anim_set_values(&anim_circle_settings_fade, 255, 0);
@@ -570,13 +570,13 @@ script:
 
       - delay: 650ms
       - lambda: |-
-          // Финально скрываем settings виджеты через флаги
+          // Finally hide settings widgets via flags
           lv_obj_add_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(weather_time_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_home_widget), LV_OBJ_FLAG_HIDDEN);
-          
-          // ВАЖНО: Сбрасываем состояние HOME элементов перед анимацией
+
+          // IMPORTANT: Reset the state of HOME elements before animation
           lv_obj_set_style_opa(id(circle_home_widget), 0, 0);
           lv_obj_set_style_opa(id(datetime_widget), 0, 0);
           lv_obj_set_style_opa(id(weather_time_widget), 0, 0);
@@ -584,8 +584,8 @@ script:
 
       - delay: 100ms
       - lambda: |-
-          // 4. ТОЛЬКО ПОТОМ появляются HOME элементы
-          
+          // 4. ONLY THEN appear HOME elements
+
           lv_anim_t anim_circle_main_fade;
           lv_anim_init(&anim_circle_main_fade);
           lv_anim_set_var(&anim_circle_main_fade, id(circle_home_widget));
@@ -596,7 +596,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle_main_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle_main_fade);
-          
+
           lv_anim_t anim_datetime_fade;
           lv_anim_init(&anim_datetime_fade);
           lv_anim_set_var(&anim_datetime_fade, id(datetime_widget));
@@ -607,7 +607,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_datetime_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_datetime_fade);
-          
+
           lv_anim_t anim_weather_time_fade;
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
@@ -618,7 +618,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
+
           lv_anim_t anim_weather_images;
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
@@ -635,13 +635,13 @@ script:
       - lambda: |-
           id(is_animating) = false;
 
-  # 7. WEATHER -> INFO (исправленный)
+  # 7. WEATHER -> INFO (fixed)
   - id: animate_weather_to_info
     then:
       - lambda: |-
-          // Плавно исчезают weather_time_widget, weather_widget
+          // Smoothly disappear weather_time_widget, weather_widget
           lv_anim_t anim_weather_time_fade, anim_weather_fade;
-          
+
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
           lv_anim_set_values(&anim_weather_time_fade, 255, 0);
@@ -651,7 +651,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
+
           lv_anim_init(&anim_weather_fade);
           lv_anim_set_var(&anim_weather_fade, id(weather_widget));
           lv_anim_set_values(&anim_weather_fade, 255, 0);
@@ -668,16 +668,16 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // СКРЫВАЕМ circle_home_widget в режиме INFO
+          // HIDE circle_home_widget in INFO mode
           lv_obj_set_style_opa(id(circle_home_widget), 0, 0);
           lv_obj_set_style_opa(id(info_widget), 0, 0);
-          // ТЕПЕРЬ одновременно появляются circle_info_widget и info_widget
+          // NOW simultaneously appear circle_info_widget and info_widget
           lv_obj_clear_flag(id(circle_info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(info_widget), LV_OBJ_FLAG_HIDDEN);
-          // Одновременные анимации:
-          // 1. Анимируем высоту контейнеров: main 120->220, middle 200->100 + middle опускается на 100px
+          // Simultaneous animations:
+          // 1. Animate container heights: main 120->220, middle 200->100 + middle lowers by 100px
           lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
-          
+
           lv_anim_init(&anim_main_expand);
           lv_anim_set_var(&anim_main_expand, id(main_widget_background));
           lv_anim_set_values(&anim_main_expand, 120, 220);
@@ -687,7 +687,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_expand);
-          
+
           lv_anim_init(&anim_middle_shrink);
           lv_anim_set_var(&anim_middle_shrink, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_shrink, 200, 100);
@@ -697,8 +697,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_shrink);
-          
-          // middle_widget_background опускается на 100px вниз
+
+          // middle_widget_background lowers by 100px down
           lv_anim_init(&anim_middle_move_down);
           lv_anim_set_var(&anim_middle_move_down, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_move_down, lv_obj_get_y(id(middle_widget_background)), lv_obj_get_y(id(middle_widget_background)) + 100);
@@ -708,8 +708,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_down);
-          
-          // 2. weather_state_images уезжает за экран вверх
+
+          // 2. weather_state_images moves off screen up
           lv_anim_t anim_weather_images;
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
@@ -723,9 +723,9 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // Плавно возвращаются кнопки home_lights_btn_bg, home_devices_btn_bg
+          // Smoothly return buttons home_lights_btn_bg, home_devices_btn_bg
           lv_anim_t anim_lights_btn, anim_devices_btn;
-          
+
           lv_anim_init(&anim_lights_btn);
           lv_anim_set_var(&anim_lights_btn, id(home_lights_btn_bg));
           lv_anim_set_values(&anim_lights_btn, -150, 30);
@@ -735,7 +735,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_lights_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_lights_btn);
-          
+
           lv_anim_init(&anim_devices_btn);
           lv_anim_set_var(&anim_devices_btn, id(home_devices_btn_bg));
           lv_anim_set_values(&anim_devices_btn, 150, -30);
@@ -745,8 +745,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_devices_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_devices_btn);
-          
-          // 4. circle_widget_background возвращается
+
+          // 4. circle_widget_background returns
           lv_anim_t anim_circle;
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(circle_widget_background));
@@ -760,8 +760,8 @@ script:
 
       - delay: 150ms
       - lambda: |-
-          // 4. ТОЛЬКО ПОТОМ появляются INFO элементы
-          
+          // 4. ONLY THEN appear INFO elements
+
           lv_anim_t anim_circle_info_fade;
           lv_anim_init(&anim_circle_info_fade);
           lv_anim_set_var(&anim_circle_info_fade, id(circle_info_widget));
@@ -772,7 +772,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle_info_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle_info_fade);
-          
+
           lv_anim_t anim_info_fade;
           lv_anim_init(&anim_info_fade);
           lv_anim_set_var(&anim_info_fade, id(info_widget));
@@ -789,19 +789,19 @@ script:
       - lambda: |-
           id(is_animating) = false;
 
-  # 8. INFO -> WEATHER (исправленный обратный переход)
+  # 8. INFO -> WEATHER (fixed reverse transition)
   - id: animate_info_to_weather
     then:
       - lambda: |-
-          // Скрываем info_widget
+          // Hide info_widget
           lv_obj_add_flag(id(info_widget), LV_OBJ_FLAG_HIDDEN);
 
       - delay: 350ms
       - lambda: |-
-          // Одновременные анимации (обратные):
-          // 1. Кнопки уезжают
+          // Simultaneous animations (reverse):
+          // 1. Buttons move away
           lv_anim_t anim_lights_btn, anim_devices_btn;
-          
+
           lv_anim_init(&anim_lights_btn);
           lv_anim_set_var(&anim_lights_btn, id(home_lights_btn_bg));
           lv_anim_set_values(&anim_lights_btn, 30, -150);
@@ -811,7 +811,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_lights_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_lights_btn);
-          
+
           lv_anim_init(&anim_devices_btn);
           lv_anim_set_var(&anim_devices_btn, id(home_devices_btn_bg));
           lv_anim_set_values(&anim_devices_btn, -30, 150);
@@ -821,8 +821,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_devices_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_devices_btn);
-          
-          // 2. circle_widget_background уезжает
+
+          // 2. circle_widget_background moves away
           lv_anim_t anim_circle;
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(circle_widget_background));
@@ -833,8 +833,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
-          // 3. weather_state_images возвращается
+
+          // 3. weather_state_images returns
           lv_anim_t anim_weather_images;
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
@@ -845,10 +845,10 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_images, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_images);
-          
-          // 4. Анимируем высоту контейнеров обратно: main 220->120, middle 100->200 + middle поднимается на 100px
+
+          // 4. Animate container heights back: main 220->120, middle 100->200 + middle rises by 100px
           lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
-          
+
           lv_anim_init(&anim_main_shrink);
           lv_anim_set_var(&anim_main_shrink, id(main_widget_background));
           lv_anim_set_values(&anim_main_shrink, 220, 120);
@@ -858,7 +858,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_shrink);
-          
+
           lv_anim_init(&anim_middle_expand);
           lv_anim_set_var(&anim_middle_expand, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_expand, 100, 200);
@@ -868,8 +868,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_expand);
-          
-          // middle_widget_background поднимается на 100px вверх (обратно)
+
+          // middle_widget_background rises by 100px up (back)
           lv_anim_init(&anim_middle_move_up);
           lv_anim_set_var(&anim_middle_move_up, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_move_up, lv_obj_get_y(id(middle_widget_background)), lv_obj_get_y(id(middle_widget_background)) - 100);
@@ -882,7 +882,7 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // Показываем weather виджеты
+          // Show weather widgets
           lv_obj_clear_flag(id(weather_time_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(weather_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(middle_weather_controls), LV_OBJ_FLAG_HIDDEN);
@@ -898,7 +898,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
+
           lv_anim_init(&anim_weather_fade);
           lv_anim_set_var(&anim_weather_fade, id(weather_widget));
           lv_anim_set_values(&anim_weather_fade, 0, 255);
@@ -909,9 +909,9 @@ script:
           lv_anim_set_path_cb(&anim_weather_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_fade);
 
-          // Скрываем circle_info_widget и ВОЗВРАЩАЕМ circle_home_widget
+          // Hide circle_info_widget and RETURN circle_home_widget
           lv_obj_add_flag(id(circle_info_widget), LV_OBJ_FLAG_HIDDEN);
-          lv_obj_set_style_opa(id(circle_home_widget), 255, 0);  // Возвращаем circle_home_widget
+          lv_obj_set_style_opa(id(circle_home_widget), 255, 0);  // Return circle_home_widget
 
       - delay: 150ms
       - script.execute: log_widgets_status
@@ -923,9 +923,9 @@ script:
   - id: animate_weather_to_settings
     then:
       - lambda: |-
-          // 1. Сначала плавно исчезают weather элементы
+          // 1. First, smoothly disappear weather elements
           lv_anim_t anim_weather_time_fade, anim_weather_fade, anim_middle_weather_fade;
-          
+
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
           lv_anim_set_values(&anim_weather_time_fade, 255, 0);
@@ -938,7 +938,7 @@ script:
             lv_obj_add_flag(id(weather_time_widget), LV_OBJ_FLAG_HIDDEN);
           });
           lv_anim_start(&anim_weather_time_fade);
-          
+
           lv_anim_init(&anim_weather_fade);
           lv_anim_set_var(&anim_weather_fade, id(weather_widget));
           lv_anim_set_values(&anim_weather_fade, 255, 0);
@@ -951,7 +951,7 @@ script:
             lv_obj_add_flag(id(weather_widget), LV_OBJ_FLAG_HIDDEN);
           });
           lv_anim_start(&anim_weather_fade);
-          
+
           lv_anim_init(&anim_middle_weather_fade);
           lv_anim_set_var(&anim_middle_weather_fade, id(middle_weather_controls));
           lv_anim_set_values(&anim_middle_weather_fade, 255, 0);
@@ -967,10 +967,10 @@ script:
 
       - delay: 400ms
       - lambda: |-
-          // 2. Меняется размер виджетов И одновременно показывается circle_settings_widget
+          // 2. Widget sizes change AND simultaneously show circle_settings_widget
           lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
-          
-          // main_widget_background: высота 120->220
+
+          // main_widget_background: height 120->220
           lv_anim_init(&anim_main_expand);
           lv_anim_set_var(&anim_main_expand, id(main_widget_background));
           lv_anim_set_values(&anim_main_expand, 120, 220);
@@ -980,8 +980,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_expand);
-          
-          // middle_widget_background: высота 200->100 И опускается на 100px
+
+          // middle_widget_background: height 200->100 AND lowers by 100px
           lv_anim_init(&anim_middle_shrink);
           lv_anim_set_var(&anim_middle_shrink, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_shrink, 200, 100);
@@ -991,7 +991,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_shrink);
-          
+
           lv_anim_init(&anim_middle_move_down);
           lv_anim_set_var(&anim_middle_move_down, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_move_down, lv_obj_get_y(id(middle_widget_background)), lv_obj_get_y(id(middle_widget_background)) + 100);
@@ -1001,18 +1001,18 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_down);
-          
-          // Одновременно показываем circle_settings_widget
+
+          // Simultaneously show circle_settings_widget
           lv_obj_clear_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_set_style_opa(id(circle_settings_widget), 255, 0);
 
       - delay: 350ms
       - lambda: |-
-          // 3. Одновременно: кнопки возвращаются, круг вверх, weather_state_images уезжает
-          // НО скрываем circle_home_widget!
+          // 3. Simultaneously: buttons return, circle up, weather_state_images moves away
+          // BUT hide circle_home_widget!
           lv_anim_t anim_lights_btn, anim_devices_btn, anim_circle, anim_weather_images;
-          
-          // home_lights_btn_bg возвращается (как в WEATHER->HOME)
+
+          // home_lights_btn_bg returns (as in WEATHER->HOME)
           lv_anim_init(&anim_lights_btn);
           lv_anim_set_var(&anim_lights_btn, id(home_lights_btn_bg));
           lv_anim_set_values(&anim_lights_btn, -150, 30);
@@ -1022,8 +1022,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_lights_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_lights_btn);
-          
-          // home_devices_btn_bg возвращается (как в WEATHER->HOME)
+
+          // home_devices_btn_bg returns (as in WEATHER->HOME)
           lv_anim_init(&anim_devices_btn);
           lv_anim_set_var(&anim_devices_btn, id(home_devices_btn_bg));
           lv_anim_set_values(&anim_devices_btn, 150, -30);
@@ -1033,8 +1033,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_devices_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_devices_btn);
-          
-          // circle_widget_background возвращается (как в WEATHER->HOME)
+
+          // circle_widget_background returns (as in WEATHER->HOME)
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(circle_widget_background));
           lv_anim_set_values(&anim_circle, 400, 100);
@@ -1044,8 +1044,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
-          // weather_state_images уезжает
+
+          // weather_state_images moves away
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
           lv_anim_set_values(&anim_weather_images, 15, -400);
@@ -1055,32 +1055,32 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_images, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_images);
-          
-          // СКРЫВАЕМ circle_home_widget
+
+          // HIDE circle_home_widget
           lv_obj_add_flag(id(circle_home_widget), LV_OBJ_FLAG_HIDDEN);
 
 
       - delay: 650ms
       - lambda: |-
-          // Показываем settings виджеты
+          // Show settings widgets
           lv_obj_clear_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
-          
-          // ВАЖНО: Сбрасываем состояние settings элементов для корректной анимации
+
+          // IMPORTANT: Reset the state of settings elements for correct animation
           lv_obj_set_style_opa(id(settings_widget), 255, 0);
           lv_obj_set_style_opa(id(circle_settings_widget), 255, 0);
           lv_obj_set_width(id(backlight_settings_brightness_background), 220);
           lv_obj_set_width(id(backlight_settings_sleep_time_background), 220);
-          
+
       - delay: 100ms
       - lambda: |-
-          // ФИНАЛЬНАЯ АНИМАЦИЯ: меняем цвет settings_widget и размеры элементов
+          // FINAL ANIMATION: change the color of settings_widget and sizes of elements
           lv_obj_set_style_bg_color(id(settings_widget), lv_color_hex(0x0d0d0d), 0);
           lv_obj_set_style_bg_opa(id(settings_widget), LV_OPA_COVER, 0);
-          
-          // Анимация изменения ширины элементов настроек
+
+          // Animation of changing the width of settings elements
           lv_anim_t anim_brightness_resize, anim_sleep_resize;
-          
+
           lv_anim_init(&anim_brightness_resize);
           lv_anim_set_var(&anim_brightness_resize, id(backlight_settings_brightness_background));
           lv_anim_set_values(&anim_brightness_resize, 220, 215);
@@ -1090,7 +1090,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_brightness_resize, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_brightness_resize);
-          
+
           lv_anim_init(&anim_sleep_resize);
           lv_anim_set_var(&anim_sleep_resize, id(backlight_settings_sleep_time_background));
           lv_anim_set_values(&anim_sleep_resize, 220, 215);
@@ -1106,13 +1106,13 @@ script:
       - lambda: |-
           id(is_animating) = false;
 
-  # 10. SETTINGS -> WEATHER (обратный порядок)
+  # 10. SETTINGS -> WEATHER (reverse order)
   - id: animate_settings_to_weather
     then:
       - lambda: |-
-          // 1. СНАЧАЛА возвращаем ширину элементов настроек
+          // 1. FIRST return the width of settings elements
           lv_anim_t anim_brightness_resize, anim_sleep_resize;
-          
+
           lv_anim_init(&anim_brightness_resize);
           lv_anim_set_var(&anim_brightness_resize, id(backlight_settings_brightness_background));
           lv_anim_set_values(&anim_brightness_resize, 215, 220);
@@ -1122,7 +1122,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_brightness_resize, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_brightness_resize);
-          
+
           lv_anim_init(&anim_sleep_resize);
           lv_anim_set_var(&anim_sleep_resize, id(backlight_settings_sleep_time_background));
           lv_anim_set_values(&anim_sleep_resize, 215, 220);
@@ -1135,14 +1135,14 @@ script:
 
       - delay: 500ms
       - lambda: |-
-          // 2. ТОЛЬКО ЗАТЕМ убираем цвет
+          // 2. ONLY THEN remove the color
           lv_obj_set_style_bg_opa(id(settings_widget), LV_OPA_TRANSP, 0);
 
       - delay: 100ms
       - lambda: |-
-          // 2. Одновременно: кнопки уезжают, круг вниз, weather_state_images возвращается
+          // 2. Simultaneously: buttons move away, circle down, weather_state_images returns
           lv_anim_t anim_settings_fade, anim_lights_btn, anim_devices_btn, anim_circle, anim_weather_images;
-          
+
           lv_anim_init(&anim_settings_fade);
           lv_anim_set_var(&anim_settings_fade, id(settings_widget));
           lv_anim_set_values(&anim_settings_fade, 255, 0);
@@ -1153,7 +1153,7 @@ script:
           lv_anim_set_path_cb(&anim_settings_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_settings_fade);
 
-          // home_lights_btn_bg уезжает влево
+          // home_lights_btn_bg moves left
           lv_anim_init(&anim_lights_btn);
           lv_anim_set_var(&anim_lights_btn, id(home_lights_btn_bg));
           lv_anim_set_values(&anim_lights_btn, 30, -150);
@@ -1163,8 +1163,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_lights_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_lights_btn);
-          
-          // home_devices_btn_bg уезжает вправо
+
+          // home_devices_btn_bg moves right
           lv_anim_init(&anim_devices_btn);
           lv_anim_set_var(&anim_devices_btn, id(home_devices_btn_bg));
           lv_anim_set_values(&anim_devices_btn, -30, 150);
@@ -1174,8 +1174,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_devices_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_devices_btn);
-          
-          // circle_widget_background опускается
+
+          // circle_widget_background lowers
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(circle_widget_background));
           lv_anim_set_values(&anim_circle, 100, 400);
@@ -1185,8 +1185,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
-          
-          // weather_state_images возвращается
+
+          // weather_state_images returns
           lv_anim_init(&anim_weather_images);
           lv_anim_set_var(&anim_weather_images, id(weather_state_images));
           lv_anim_set_values(&anim_weather_images, -400, 15);
@@ -1199,10 +1199,10 @@ script:
 
       - delay: 600ms
       - lambda: |-
-          // 3. Изменяем размеры контейнеров обратно
+          // 3. Change container sizes back
           lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
-          
-          // main_widget_background: высота 220->120
+
+          // main_widget_background: height 220->120
           lv_anim_init(&anim_main_shrink);
           lv_anim_set_var(&anim_main_shrink, id(main_widget_background));
           lv_anim_set_values(&anim_main_shrink, 220, 120);
@@ -1212,8 +1212,8 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_shrink);
-          
-          // middle_widget_background: высота 100->200 И поднимается на 100px
+
+          // middle_widget_background: height 100->200 AND rises by 100px
           lv_anim_init(&anim_middle_expand);
           lv_anim_set_var(&anim_middle_expand, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_expand, 100, 200);
@@ -1223,7 +1223,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_expand);
-          
+
           lv_anim_init(&anim_middle_move_up);
           lv_anim_set_var(&anim_middle_move_up, id(middle_widget_background));
           lv_anim_set_values(&anim_middle_move_up, lv_obj_get_y(id(middle_widget_background)), lv_obj_get_y(id(middle_widget_background)) - 100);
@@ -1236,9 +1236,9 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // 4. Показываем weather элементы
+          // 4. Show weather elements
           lv_anim_t anim_weather_time_fade, anim_weather_fade, anim_middle_weather_fade;
-          
+
           lv_obj_clear_flag(id(weather_time_widget), LV_OBJ_FLAG_HIDDEN);
           lv_anim_init(&anim_weather_time_fade);
           lv_anim_set_var(&anim_weather_time_fade, id(weather_time_widget));
@@ -1249,7 +1249,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_time_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_time_fade);
-          
+
           lv_obj_clear_flag(id(weather_widget), LV_OBJ_FLAG_HIDDEN);
           lv_anim_init(&anim_weather_fade);
           lv_anim_set_var(&anim_weather_fade, id(weather_widget));
@@ -1260,7 +1260,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_weather_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_weather_fade);
-          
+
           lv_obj_clear_flag(id(middle_weather_controls), LV_OBJ_FLAG_HIDDEN);
           lv_anim_init(&anim_middle_weather_fade);
           lv_anim_set_var(&anim_middle_weather_fade, id(middle_weather_controls));
@@ -1274,11 +1274,11 @@ script:
 
       - delay: 100ms
       - lambda: |-
-          // 1. Скрываем settings_widget и circle_settings_widget
+          // 1. Hide settings_widget and circle_settings_widget
           lv_obj_add_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
-          
-          // ПОКАЗЫВАЕМ обратно circle_home_widget
+
+          // SHOW back circle_home_widget
           lv_obj_clear_flag(id(circle_home_widget), LV_OBJ_FLAG_HIDDEN);
 
       - delay: 150ms
@@ -1290,7 +1290,7 @@ script:
   - id: animate_info_to_settings
     then:
       - lambda: |-
-          // СНАЧАЛА полностью скрываем info виджеты
+          // FIRST completely hide info widgets
           lv_anim_t anim_info_fade, anim_circle_info_fade;
 
           lv_anim_init(&anim_info_fade);
@@ -1302,7 +1302,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_info_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_info_fade);
-          
+
           lv_anim_init(&anim_circle_info_fade);
           lv_anim_set_var(&anim_circle_info_fade, id(circle_info_widget));
           lv_anim_set_values(&anim_circle_info_fade, 255, 0);
@@ -1315,25 +1315,25 @@ script:
 
       - delay: 650ms
       - lambda: |-
-          // Показываем settings виджеты
+          // Show settings widgets
           lv_obj_clear_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
-          
-          // ВАЖНО: Сбрасываем состояние settings элементов для корректной анимации
+
+          // IMPORTANT: Reset the state of settings elements for correct animation
           lv_obj_set_style_opa(id(settings_widget), 255, 0);
           lv_obj_set_style_opa(id(circle_settings_widget), 255, 0);
           lv_obj_set_width(id(backlight_settings_brightness_background), 220);
           lv_obj_set_width(id(backlight_settings_sleep_time_background), 220);
-          
+
       - delay: 100ms
       - lambda: |-
-          // ФИНАЛЬНАЯ АНИМАЦИЯ: меняем цвет settings_widget и размеры элементов
+          // FINAL ANIMATION: change the color of settings_widget and sizes of elements
           lv_obj_set_style_bg_color(id(settings_widget), lv_color_hex(0x0d0d0d), 0);
           lv_obj_set_style_bg_opa(id(settings_widget), LV_OPA_COVER, 0);
-          
-          // Анимация изменения ширины элементов настроек
+
+          // Animation of changing the width of settings elements
           lv_anim_t anim_brightness_resize, anim_sleep_resize;
-          
+
           lv_anim_init(&anim_brightness_resize);
           lv_anim_set_var(&anim_brightness_resize, id(backlight_settings_brightness_background));
           lv_anim_set_values(&anim_brightness_resize, 220, 215);
@@ -1343,7 +1343,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_brightness_resize, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_brightness_resize);
-          
+
           lv_anim_init(&anim_sleep_resize);
           lv_anim_set_var(&anim_sleep_resize, id(backlight_settings_sleep_time_background));
           lv_anim_set_values(&anim_sleep_resize, 220, 215);
@@ -1363,9 +1363,9 @@ script:
   - id: animate_settings_to_info
     then:
       - lambda: |-
-          // 1. СНАЧАЛА возвращаем ширину элементов настроек
+          // 1. FIRST return the width of settings elements
           lv_anim_t anim_brightness_resize, anim_sleep_resize;
-          
+
           lv_anim_init(&anim_brightness_resize);
           lv_anim_set_var(&anim_brightness_resize, id(backlight_settings_brightness_background));
           lv_anim_set_values(&anim_brightness_resize, 215, 220);
@@ -1375,7 +1375,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_brightness_resize, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_brightness_resize);
-          
+
           lv_anim_init(&anim_sleep_resize);
           lv_anim_set_var(&anim_sleep_resize, id(backlight_settings_sleep_time_background));
           lv_anim_set_values(&anim_sleep_resize, 215, 220);
@@ -1388,14 +1388,14 @@ script:
 
       - delay: 500ms
       - lambda: |-
-          // 2. ТОЛЬКО ЗАТЕМ убираем цвет
+          // 2. ONLY THEN remove the color
           lv_obj_set_style_bg_opa(id(settings_widget), LV_OPA_TRANSP, 0);
 
       - delay: 100ms
       - lambda: |-
-          // 3. СНАЧАЛА полностью скрываем settings виджеты
+          // 3. FIRST completely hide settings widgets
           lv_anim_t anim_settings_fade, anim_circle_settings_fade;
-          
+
           lv_anim_init(&anim_settings_fade);
           lv_anim_set_var(&anim_settings_fade, id(settings_widget));
           lv_anim_set_values(&anim_settings_fade, 255, 0);
@@ -1405,7 +1405,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_settings_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_settings_fade);
-          
+
           lv_anim_init(&anim_circle_settings_fade);
           lv_anim_set_var(&anim_circle_settings_fade, id(circle_settings_widget));
           lv_anim_set_values(&anim_circle_settings_fade, 255, 0);
@@ -1418,13 +1418,13 @@ script:
 
       - delay: 350ms
       - lambda: |-
-          // ВАЖНО: Сбрасываем состояние SETTINGS элементов
+          // IMPORTANT: Reset the state of SETTINGS elements
           lv_obj_add_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_set_style_opa(id(circle_settings_widget), 0, 0);
           lv_obj_set_style_opa(id(settings_widget), 0, 0);
 
-          // ВАЖНО: Сбрасываем состояние INFO элементов перед анимацией
+          // IMPORTANT: Reset the state of INFO elements before animation
           lv_obj_clear_flag(id(info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_set_style_opa(id(circle_info_widget), 0, 0);
@@ -1432,8 +1432,8 @@ script:
 
       - delay: 100ms
       - lambda: |-
-          // 4. ТОЛЬКО ПОТОМ появляются INFO элементы
-          
+          // 4. ONLY THEN appear INFO elements
+
           lv_anim_t anim_circle_info_fade;
           lv_anim_init(&anim_circle_info_fade);
           lv_anim_set_var(&anim_circle_info_fade, id(circle_info_widget));
@@ -1444,7 +1444,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle_info_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle_info_fade);
-          
+
           lv_anim_t anim_info_fade;
           lv_anim_init(&anim_info_fade);
           lv_anim_set_var(&anim_info_fade, id(info_widget));

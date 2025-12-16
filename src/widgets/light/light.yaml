@@ -1,139 +1,565 @@
+# https://esphome.io/components/light/light.html (adapted for shared multi-entity control)
+
+substitutions: !include substitutions.yaml
+
 globals:
-  - id: ${widget_name}_current_hue
+
+  # NEW: Per-light color mode support globals (Light 1)
+  - id: light_1_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_1_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_1_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_1_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  # NEW: Per-light color mode support globals (Light 2)
+  - id: light_2_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_2_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_2_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_2_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  # NEW: Per-light color mode support globals (Light 3)
+  - id: light_3_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_3_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_3_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_3_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  # NEW: Per-light color mode support globals (Light 4)
+  - id: light_4_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_4_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_4_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_4_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  - id: light_5_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_5_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_5_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_5_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  - id: light_6_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_6_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_6_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_6_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  # NEW: Global variables for friendly names
+  - id: light_name_1_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: light_name_2_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: light_name_3_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: light_name_4_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: light_name_5_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: light_name_6_stored
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+  - id: current_light_index
+    type: int
+    initial_value: '1'
+    restore_value: no
+
+  - id: current_light_entity
+    type: std::string
+    restore_value: false
+    initial_value: '"${light_entity_1}"'
+
+  - id: light_initial_load_complete
+    type: bool
+    initial_value: 'false'
+
+  - id: light_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: light_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: light_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: light_supports_brightness
+    type: bool
+    initial_value: 'false'
+
+  - id: light_is_temp_mode
+    type: bool
+    initial_value: 'false'
+
+  - id: light_current_hue
     type: float
     initial_value: '0.0'
 
-  - id: ${widget_name}_current_saturation
+  - id: light_current_saturation
     type: float
     initial_value: '0.0'
 
-  - id: ${widget_name}_current_brightness
+  - id: light_current_brightness
     type: int
     initial_value: '100'
 
-  - id: ${widget_name}_current_color_temp
+  - id: light_current_color_temp
     type: float
     initial_value: '3000.0'
 
-  - id: ${widget_name}_is_temp_mode
-    type: bool
-    initial_value: 'false'
-
-  # Новые глобальные переменные для хранения поддерживаемых режимов
-  - id: ${widget_name}_supports_color_temp
-    type: bool
-    initial_value: 'false'
-
-  - id: ${widget_name}_supports_hs
-    type: bool
-    initial_value: 'false'
-
-  - id: ${widget_name}_supports_rgb
-    type: bool
-    initial_value: 'false'
-
-  - id: ${widget_name}_supports_brightness
-    type: bool
-    initial_value: 'false'
-
 
 binary_sensor:
-  # НОВОЕ: Отслеживание состояния лампы (on/off)
+  # Individual binary sensors for state (publish via template on_state)
   - platform: homeassistant
-    id: ${widget_name}_light_state
-    entity_id: "${light_entity}"
+    id: light_state_1
+    entity_id: "${light_entity_1}"
+    internal: true
+    trigger_on_initial_state: true
     on_state:
-      # При изменении состояния лампы обновляем цвет виджета
-      - script.execute: ${widget_name}_update_lightbulb_color
+      - script.execute: light_update_all_selector_icons
 
-  # ИСПРАВЛЕНО: Управление кнопкой лампочки
+  - platform: homeassistant
+    id: light_state_2
+    entity_id: "${light_entity_2}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_state_3
+    entity_id: "${light_entity_3}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_state_4
+    entity_id: "${light_entity_4}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_state_5
+    entity_id: "${light_entity_5}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_state_6
+    entity_id: "${light_entity_6}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+
+  # Template aggregator for shared light state (on/off)
+  - platform: template
+    id: light_state
+    lambda: |-
+      auto get_state = [&](int idx) -> bool {
+        switch (idx) {
+          case 1: return id(light_state_1).state;
+          case 2: return id(light_state_2).state;
+          case 3: return id(light_state_3).state;
+          case 4: return id(light_state_4).state;
+          case 5: return id(light_state_5).state;
+          case 6: return id(light_state_6).state;
+          default: return false;
+        }
+      };
+      return get_state(id(current_light_index));
+    on_press:
+      - script.execute: light_update_lightbulb_color
+      - script.execute: light_update_button_icon_color
+    on_release:
+      - script.execute: light_update_lightbulb_color
+      - script.execute: light_update_button_icon_color
+
+  # Shared LVGL button control for toggle and mode switch
   - platform: lvgl
-    id: ${widget_name}_light_btn_control
-    widget: ${widget_name}_lightbulb_btn
+    id: light_btn_control
+    widget: light_lightbulb_btn
     on_click:
-      # КОРОТКОЕ нажатие (50-500ms) - ВСЕГДА включает/выключает лампу
+      # SHORT press (50-500ms) - ALWAYS turns the lamp on/off
       - min_length: 50ms
         max_length: 500ms
         then:
-          - homeassistant.action:
-              action: light.toggle
-              data:
-                entity_id: "${light_entity}"
           - lambda: |-
               ESP_LOGD("light_btn", "Short press - toggling light");
-      
-      # ДОЛГОЕ нажатие (800-3000ms) - переключение режима (только если поддерживается)
+          - homeassistant.service:
+              service: homeassistant.toggle
+              data:
+                entity_id: !lambda 'return id(current_light_entity);'
+
+      # LONG press (800-3000ms) - mode switching (only if supported)
       - min_length: 800ms
         max_length: 3000ms
         then:
           - if:
               condition:
                 lambda: |-
-                  // Переключаем режим только если лампа поддерживает ОБА режима
-                  return id(${widget_name}_supports_color_temp) && 
-                         (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb));
+                  return id(light_supports_color_temp) &&
+                         (id(light_supports_hs) || id(light_supports_rgb));
               then:
                 - lambda: |-
-                    id(${widget_name}_is_temp_mode) = !id(${widget_name}_is_temp_mode);
-                    ESP_LOGD("light_btn", "Long press - switching mode to: %s", 
-                      id(${widget_name}_is_temp_mode) ? "ColorTemp" : "HS");
-                - script.execute: ${widget_name}_toggle_gradient
+                    id(light_is_temp_mode) = !id(light_is_temp_mode);
+                    ESP_LOGD("light_btn", "Long press - switching mode to: %s",
+                      id(light_is_temp_mode) ? "ColorTemp" : "HS");
+                - script.execute: light_toggle_gradient
               else:
                 - lambda: |-
                     ESP_LOGD("light_btn", "Long press ignored - only one color mode supported");
 
-
-
 sensor:
-  # Brightness sensor
-  - platform: homeassistant
-    id: ${widget_name}_light_rgb_sensor_brightness
-    entity_id: "${light_entity}"
-    attribute: brightness
+  # Template aggregators for shared UI updates
+  - platform: template
+    id: light_brightness
+    internal: true
+    lambda: |-
+      auto get_brightness = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(light_brightness_1).state;
+          case 2: return id(light_brightness_2).state;
+          case 3: return id(light_brightness_3).state;
+          case 4: return id(light_brightness_4).state;
+          case 5: return id(light_brightness_5).state;
+          case 6: return id(light_brightness_6).state;
+          default: return {};
+        }
+      };
+      return get_brightness(id(current_light_index));
     on_value:
       - if:
           condition:
             lambda: 'return !std::isnan(x);'
           then:
             - globals.set:
-                id: ${widget_name}_current_brightness
-                value: !lambda return x;
+                id: light_current_brightness
+                value: !lambda 'return x;'
             - lvgl.slider.update:
-                id: ${widget_name}_light_brightness_slider
-                value: !lambda return int(x);
-            - script.execute: ${widget_name}_update_lightbulb_color
+                id: light_brightness_slider
+                value: !lambda 'return int(x);'
+            - script.execute: light_update_lightbulb_color
+            - script.execute: light_update_button_icon_color
 
-  # Color temp sensor
-  - platform: homeassistant
-    id: ${widget_name}_light_sensor_color_temp
-    entity_id: "${light_entity}"
-    attribute: color_temp_kelvin
+  - platform: template
+    id: light_color_temp
+    internal: true
+    lambda: |-
+      auto get_color_temp = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(light_color_temp_1).state;
+          case 2: return id(light_color_temp_2).state;
+          case 3: return id(light_color_temp_3).state;
+          case 4: return id(light_color_temp_4).state;
+          case 5: return id(light_color_temp_5).state;
+          case 6: return id(light_color_temp_6).state;
+          default: return {};
+        }
+      };
+      return get_color_temp(id(current_light_index));
     on_value:
       - if:
           condition:
             lambda: 'return !std::isnan(x);'
           then:
             - globals.set:
-                id: ${widget_name}_current_color_temp
-                value: !lambda return x;
+                id: light_current_color_temp
+                value: !lambda 'return x;'
             - lvgl.arc.update:
-                id: ${widget_name}_light_arc_color_temp
-                value: !lambda return int(x);
-            # НОВОЕ: Обновляем цвет лампочки при изменении температуры от HA
-            # Но только если мы в режиме color_temp
+                id: light_arc_color_temp
+                value: !lambda 'return int(x);'
             - if:
                 condition:
-                  lambda: 'return id(${widget_name}_is_temp_mode);'
+                  lambda: 'return id(light_is_temp_mode);'
                 then:
-                  - script.execute: ${widget_name}_update_lightbulb_color
+                  - script.execute: light_update_lightbulb_color
+                  - script.execute: light_update_button_icon_color
+
+  # Individual HA sensors for each light (publish only if active index)
+  - platform: homeassistant
+    id: light_brightness_1
+    entity_id: "${light_entity_1}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_color_temp_1
+    entity_id: "${light_entity_1}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  # Repeat pattern for lights 2-4
+  - platform: homeassistant
+    id: light_brightness_2
+    entity_id: "${light_entity_2}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_color_temp_2
+    entity_id: "${light_entity_2}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_brightness_3
+    entity_id: "${light_entity_3}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_color_temp_3
+    entity_id: "${light_entity_3}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_brightness_4
+    entity_id: "${light_entity_4}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_brightness_5
+    entity_id: "${light_entity_5}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_brightness_6
+    entity_id: "${light_entity_6}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_color_temp_4
+    entity_id: "${light_entity_4}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_color_temp_5
+    entity_id: "${light_entity_5}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_color_temp_6
+    entity_id: "${light_entity_6}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
 
 text_sensor:
-
-  # HS Color sensor
-  - platform: homeassistant
-    id: ${widget_name}_light_sensor_hs
-    entity_id: "${light_entity}"
-    attribute: hs_color
+  # Template aggregator for HS color
+  - platform: template
+    id: light_hs_color
+    internal: true
+    lambda: |-
+      auto get_hs = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(light_hs_color_1).state;
+          case 2: return id(light_hs_color_2).state;
+          case 3: return id(light_hs_color_3).state;
+          case 4: return id(light_hs_color_4).state;
+          case 5: return id(light_hs_color_5).state;
+          case 6: return id(light_hs_color_6).state;
+          default: return "";
+        }
+      };
+      return get_hs(id(current_light_index));
     on_value:
       - if:
           condition:
@@ -149,100 +575,1040 @@ text_sensor:
                   hue = atof(s.substr(start, comma - start).c_str());
                   sat = atof(s.substr(comma + 1, end - comma - 1).c_str());
                 }
-                id(${widget_name}_current_hue) = hue;
-                id(${widget_name}_current_saturation) = sat;
+                id(light_current_hue) = hue;
+                id(light_current_saturation) = sat;
             - lvgl.arc.update:
-                id: ${widget_name}_light_arc_hue
-                value: !lambda return id(${widget_name}_current_hue);
-            # ИСПРАВЛЕНО: Обновляем saturation slider только если он видим
+                id: light_arc_hue
+                value: !lambda 'return id(light_current_hue);'
             - if:
                 condition:
                   lambda: |-
-                    return !id(${widget_name}_is_temp_mode) && 
-                           (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb));
+                    return !id(light_is_temp_mode) &&
+                           (id(light_supports_hs) || id(light_supports_rgb));
                 then:
                   - lvgl.slider.update:
-                      id: ${widget_name}_light_saturation_slider
-                      value: !lambda return id(${widget_name}_current_saturation);
-            
-            # НОВОЕ: Обновляем цвет лампочки при изменении HS от HA
-            # Но только если мы в режиме HS
+                      id: light_saturation_slider
+                      value: !lambda 'return id(light_current_saturation);'
             - if:
                 condition:
-                  lambda: 'return !id(${widget_name}_is_temp_mode);'
+                  lambda: 'return !id(light_is_temp_mode);'
                 then:
-                  - script.execute: ${widget_name}_update_lightbulb_color
+                  - script.execute: light_update_lightbulb_color
+                  - script.execute: light_update_button_icon_color
 
-  # НОВЫЙ СЕНСОР: Определение поддерживаемых режимов цвета
-  # Этот сенсор читает атрибут supported_color_modes и определяет возможности лампы
-  - platform: homeassistant
-    id: ${widget_name}_light_supported_modes
-    entity_id: "${light_entity}"
-    attribute: supported_color_modes
+  # Template aggregator for supported color modes
+  - platform: template
+    id: light_supported_modes
+    internal: true
+    lambda: |-
+      auto get_modes = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(light_supported_modes_1).state;
+          case 2: return id(light_supported_modes_2).state;
+          case 3: return id(light_supported_modes_3).state;
+          case 4: return id(light_supported_modes_4).state;
+          case 5: return id(light_supported_modes_5).state;
+          case 6: return id(light_supported_modes_6).state;
+          default: return "";
+        }
+      };
+      return get_modes(id(current_light_index));
     on_value:
       - lambda: |-
-          // Парсим строку с поддерживаемыми режимами
+          // Parsing a string with supported modes
           std::string modes = x;
-          
-          // Проверяем наличие каждого режима
-          id(${widget_name}_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
-          id(${widget_name}_supports_hs) = (modes.find("hs") != std::string::npos);
-          id(${widget_name}_supports_rgb) = (modes.find("rgb") != std::string::npos);
-          
-          id(${widget_name}_supports_brightness) = (
+
+          // We check the presence of each mode
+          id(light_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_supports_rgb) = (modes.find("rgb") != std::string::npos);
+
+          id(light_supports_brightness) = (
             modes.find("brightness") != std::string::npos ||
-            id(${widget_name}_supports_hs) ||
-            id(${widget_name}_supports_rgb) ||
-            id(${widget_name}_supports_color_temp)
+            id(light_supports_hs) ||
+            id(light_supports_rgb) ||
+            id(light_supports_color_temp)
           );
-          
-          ESP_LOGD("light_widget", "═══════════════════════════════════════");
-          ESP_LOGD("light_widget", "Supported modes: %s", modes.c_str());
-          ESP_LOGD("light_widget", "Color temp: %d, HS: %d, RGB: %d, Brightness: %d",
-            id(${widget_name}_supports_color_temp),
-            id(${widget_name}_supports_hs),
-            id(${widget_name}_supports_rgb),
-            id(${widget_name}_supports_brightness)
-          );
-          
-          // ═══════════════════════════════════════════════════════════════════
-          // НОВОЕ: Умный выбор начального режима
-          // ═══════════════════════════════════════════════════════════════════
-          
-          if (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb)) {
-            // Если поддерживается HS/RGB - начинаем с него (более универсальный)
-            id(${widget_name}_is_temp_mode) = false;
-            ESP_LOGD("light_widget", "→ Initial mode: HS (preferred for color lights)");
-          } else if (id(${widget_name}_supports_color_temp)) {
-            // Если только ColorTemp - используем его
-            id(${widget_name}_is_temp_mode) = true;
-            ESP_LOGD("light_widget", "→ Initial mode: ColorTemp (only option)");
-          } else {
-            // Если ничего не поддерживается - не важно
-            id(${widget_name}_is_temp_mode) = false;
-            ESP_LOGD("light_widget", "→ Initial mode: N/A (no color modes)");
+
+          ESP_LOGD("light_widget", "Supported modes parsed for index %d", id(current_light_index));
+
+          // Reset initial load if needed and re-init layout
+          if (!id(light_initial_load_complete)) {
+            id(light_initial_load_complete) = true;
           }
-          
-          ESP_LOGD("light_widget", "═══════════════════════════════════════");
-      
-      # После определения режимов обновляем видимость виджетов
-      - script.execute: ${widget_name}_update_widget_visibility
+          id(light_update_layout).execute();
+
+  # Individual HA text sensors for each light
+  - platform: homeassistant
+    id: light_hs_color_1
+    entity_id: "${light_entity_1}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  # Individual HA text sensors for each light's supported modes
+  - platform: homeassistant
+    id: light_supported_modes_1
+    entity_id: "${light_entity_1}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+
+          // Store capabilities for light 1
+          id(light_1_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_1_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_1_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_1_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_1_supports_hs) ||
+            id(light_1_supports_rgb) ||
+            id(light_1_supports_color_temp)
+          );
+
+          ESP_LOGD("light_widget", "Light 1 modes: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_1_supports_color_temp), id(light_1_supports_hs),
+            id(light_1_supports_rgb), id(light_1_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
 
   - platform: homeassistant
-    id: ${widget_name}_light_name
-    entity_id: "${light_entity}"
-    attribute: friendly_name
-    on_value: 
-      then:
-        - lvgl.label.update:
-            id: ${widget_name}_light_name_label
-            text: !lambda return x;
+    id: light_supported_modes_2
+    entity_id: "${light_entity_2}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
 
+          // Store capabilities for light 2
+          id(light_2_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_2_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_2_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_2_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_2_supports_hs) ||
+            id(light_2_supports_rgb) ||
+            id(light_2_supports_color_temp)
+          );
+
+          ESP_LOGD("light_widget", "Light 2 modes: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_2_supports_color_temp), id(light_2_supports_hs),
+            id(light_2_supports_rgb), id(light_2_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_supported_modes_3
+    entity_id: "${light_entity_3}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+
+          // Store capabilities for light 3
+          id(light_3_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_3_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_3_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_3_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_3_supports_hs) ||
+            id(light_3_supports_rgb) ||
+            id(light_3_supports_color_temp)
+          );
+
+          ESP_LOGD("light_widget", "Light 3 modes: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_3_supports_color_temp), id(light_3_supports_hs),
+            id(light_3_supports_rgb), id(light_3_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_supported_modes_4
+    entity_id: "${light_entity_4}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+
+          // Store capabilities for light 4
+          id(light_4_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_4_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_4_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_4_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_4_supports_hs) ||
+            id(light_4_supports_rgb) ||
+            id(light_4_supports_color_temp)
+          );
+
+          ESP_LOGD("light_widget", "Light 4 modes: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_4_supports_color_temp), id(light_4_supports_hs),
+            id(light_4_supports_rgb), id(light_4_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_supported_modes_5
+    entity_id: "${light_entity_5}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_5_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_5_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_5_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_5_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_5_supports_hs) ||
+            id(light_5_supports_rgb) ||
+            id(light_5_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 5 modes: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_5_supports_color_temp), id(light_5_supports_hs),
+            id(light_5_supports_rgb), id(light_5_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_supported_modes_6
+    entity_id: "${light_entity_6}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_6_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_6_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_6_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_6_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_6_supports_hs) ||
+            id(light_6_supports_rgb) ||
+            id(light_6_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 6 modes: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_6_supports_color_temp), id(light_6_supports_hs),
+            id(light_6_supports_rgb), id(light_6_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_hs_color_2
+    entity_id: "${light_entity_2}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_hs_color_3
+    entity_id: "${light_entity_3}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_hs_color_4
+    entity_id: "${light_entity_4}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_hs_color_5
+    entity_id: "${light_entity_5}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+  - platform: homeassistant
+    id: light_hs_color_6
+    entity_id: "${light_entity_6}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+      - script.execute: light_update_all_selector_icons
+
+
+  # Friendly name sensors - store in globals
+  - platform: homeassistant
+    id: light_name_1
+    entity_id: "${light_entity_1}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_1_stored) = x;
+          ESP_LOGD("light_name", "Stored light 1 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_name_2
+    entity_id: "${light_entity_2}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_2_stored) = x;
+          ESP_LOGD("light_name", "Stored light 2 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_name_3
+    entity_id: "${light_entity_3}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_3_stored) = x;
+          ESP_LOGD("light_name", "Stored light 3 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_name_4
+    entity_id: "${light_entity_4}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_4_stored) = x;
+          ESP_LOGD("light_name", "Stored light 4 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_name_5
+    entity_id: "${light_entity_5}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_5_stored) = x;
+          ESP_LOGD("light_name", "Stored light 5 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: light_name_6
+    entity_id: "${light_entity_6}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_6_stored) = x;
+          ESP_LOGD("light_name", "Stored light 6 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+script:
+
+  # NEW: Script para actualizar el color de TODOS los iconos del selector
+  - id: light_update_all_selector_icons
+    then:
+      - lambda: |-
+          // Helper function para calcular el color de un icono según su estado
+          auto get_icon_color = [](int index) -> lv_color_t {
+            bool is_on = false;
+            int brightness = 100;
+            float hue = 0.0f;
+            float sat = 0.0f;
+            float temp = 3000.0f;
+            bool has_color = false;
+            bool is_temp_mode_local = false;
+
+            // Get state for this light
+            switch (index) {
+              case 1:
+                is_on = id(light_state_1).state;
+                if (id(light_brightness_1).has_state()) brightness = id(light_brightness_1).state;
+                break;
+              case 2:
+                is_on = id(light_state_2).state;
+                if (id(light_brightness_2).has_state()) brightness = id(light_brightness_2).state;
+                break;
+              case 3:
+                is_on = id(light_state_3).state;
+                if (id(light_brightness_3).has_state()) brightness = id(light_brightness_3).state;
+                break;
+              case 4:
+                is_on = id(light_state_4).state;
+                if (id(light_brightness_4).has_state()) brightness = id(light_brightness_4).state;
+                break;
+              case 5:
+                is_on = id(light_state_5).state;
+                if (id(light_brightness_5).has_state()) brightness = id(light_brightness_5).state;
+                break;
+              case 6:
+                is_on = id(light_state_6).state;
+                if (id(light_brightness_6).has_state()) brightness = id(light_brightness_6).state;
+                break;
+            }
+
+            // If light is OFF, return gray
+            if (!is_on) {
+              return lv_color_make(153, 153, 153);  // 60% gray
+            }
+
+            // Check if this light has color capabilities
+            std::string modes = "";
+            switch (index) {
+              case 1: modes = id(light_supported_modes_1).state; break;
+              case 2: modes = id(light_supported_modes_2).state; break;
+              case 3: modes = id(light_supported_modes_3).state; break;
+              case 4: modes = id(light_supported_modes_4).state; break;
+              case 5: modes = id(light_supported_modes_5).state; break;
+              case 6: modes = id(light_supported_modes_6).state; break;
+            }
+
+            bool supports_temp = (modes.find("color_temp") != std::string::npos);
+            bool supports_hs = (modes.find("hs") != std::string::npos);
+            bool supports_rgb = (modes.find("rgb") != std::string::npos);
+            has_color = supports_temp || supports_hs || supports_rgb;
+
+            // If light is ON but has no color support, return yellow
+            if (!has_color) {
+              uint8_t val = 204;  // 80% of 255
+              if (modes.find("brightness") != std::string::npos || supports_hs || supports_rgb || supports_temp) {
+                float bright_scale = 0.6 + (brightness / 255.0 * 0.4);
+                val = 255 * bright_scale;
+              }
+              return lv_color_make(val, val, 0);
+            }
+
+            // Get color data for this light
+            // Determine mode: prefer HS if available and hs_color is not empty
+            std::string hs_str = "";
+            switch (index) {
+              case 1: hs_str = id(light_hs_color_1).state; break;
+              case 2: hs_str = id(light_hs_color_2).state; break;
+              case 3: hs_str = id(light_hs_color_3).state; break;
+              case 4: hs_str = id(light_hs_color_4).state; break;
+              case 5: hs_str = id(light_hs_color_5).state; break;
+              case 6: hs_str = id(light_hs_color_6).state; break;
+            }
+
+            // Parse HS if available
+            if (!hs_str.empty() && hs_str != "None" && (supports_hs || supports_rgb)) {
+              size_t start = hs_str.find('(') + 1;
+              size_t comma = hs_str.find(',');
+              size_t end = hs_str.find(')');
+              if (start < comma && comma < end) {
+                hue = atof(hs_str.substr(start, comma - start).c_str());
+                sat = atof(hs_str.substr(comma + 1, end - comma - 1).c_str());
+                is_temp_mode_local = false;
+              }
+            } else if (supports_temp) {
+              // Use color temp
+              switch (index) {
+                case 1: if (id(light_color_temp_1).has_state()) temp = id(light_color_temp_1).state; break;
+                case 2: if (id(light_color_temp_2).has_state()) temp = id(light_color_temp_2).state; break;
+                case 3: if (id(light_color_temp_3).has_state()) temp = id(light_color_temp_3).state; break;
+                case 4: if (id(light_color_temp_4).has_state()) temp = id(light_color_temp_4).state; break;
+                case 5: if (id(light_color_temp_5).has_state()) temp = id(light_color_temp_5).state; break;
+                case 6: if (id(light_color_temp_6).has_state()) temp = id(light_color_temp_6).state; break;
+              }
+              is_temp_mode_local = true;
+            }
+
+            // Calculate RGB color
+            uint8_t r = 255, g = 255, b = 255;
+            if (is_temp_mode_local) {
+              // Kelvin to RGB
+              float t = temp / 100.0f;
+              float r_val = 0.0f, g_val = 0.0f, b_val = 0.0f;
+              if (t <= 66.0f) {
+                r_val = 255.0f;
+                g_val = 99.4708025861f * log(t) - 161.1195681661f;
+                if (t <= 19.0f) b_val = 0.0f;
+                else b_val = 138.5177312231f * log(t - 10.0f) - 305.0447927307f;
+              } else {
+                r_val = 329.698727446f * pow(t - 60.0f, -0.1332047592f);
+                g_val = 288.1221695283f * pow(t - 60.0f, -0.0755148492f);
+                b_val = 255.0f;
+              }
+              r = (uint8_t)fminf(fmaxf(r_val, 0.0f), 255.0f);
+              g = (uint8_t)fminf(fmaxf(g_val, 0.0f), 255.0f);
+              b = (uint8_t)fminf(fmaxf(b_val, 0.0f), 255.0f);
+            } else {
+              // HS to RGB
+              uint16_t h = (uint16_t)fminf(fmaxf(hue, 0.0f), 359.0f);
+              uint8_t s = (uint8_t)fminf(fmaxf(sat, 0.0f), 100.0f);
+              lv_color_t full = lv_color_hsv_to_rgb(h, s, 100);
+              lv_color32_t full32;
+              full32.full = lv_color_to32(full);
+              r = full32.ch.red;
+              g = full32.ch.green;
+              b = full32.ch.blue;
+            }
+
+            // Apply brightness scaling (60% to 100%)
+            float bright_scale = 0.6 + (brightness / 255.0 * 0.4);
+            r = r * bright_scale;
+            g = g * bright_scale;
+            b = b * bright_scale;
+
+            return lv_color_make(r, g, b);
+          };
+
+          // Update all 4 selector icons
+          lv_obj_set_style_text_color(id(light_icon_1), get_icon_color(1), 0);
+          lv_obj_set_style_text_color(id(light_icon_2), get_icon_color(2), 0);
+          lv_obj_set_style_text_color(id(light_icon_3), get_icon_color(3), 0);
+          lv_obj_set_style_text_color(id(light_icon_4), get_icon_color(4), 0);
+          lv_obj_set_style_text_color(id(light_icon_5), get_icon_color(5), 0);
+          lv_obj_set_style_text_color(id(light_icon_6), get_icon_color(6), 0);
+
+  - id: get_light_amount_btn
+    then:
+      - lambda: |-
+          int lights = ${lights_amount};
+
+          if (lights >= 2) {
+            lv_obj_set_width(id(light_select_widget), 190);
+            lv_obj_set_width(id(light_select_widget_cont), 130);
+            lv_obj_clear_flag(id(light_btn_1), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(light_btn_2), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(light_btn_1), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(light_btn_2), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          if (lights >= 3) {
+            lv_obj_set_width(id(light_select_widget), 245);
+            lv_obj_set_width(id(light_select_widget_cont), 185);
+            lv_obj_clear_flag(id(light_btn_3), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(light_btn_3), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          if (lights >= 4) {
+            lv_obj_set_width(id(light_select_widget), 300);
+            lv_obj_set_width(id(light_select_widget_cont), 240);
+            lv_obj_clear_flag(id(light_btn_4), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(light_btn_4), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          if (lights >= 5) {
+            lv_obj_set_width(id(light_select_widget), 355);
+            lv_obj_set_width(id(light_select_widget_cont), 295);
+            lv_obj_clear_flag(id(light_btn_5), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(light_btn_5), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          if (lights >= 6) {
+            lv_obj_set_width(id(light_select_widget), 410);
+            lv_obj_set_width(id(light_select_widget_cont), 350);
+            lv_obj_clear_flag(id(light_btn_6), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(light_btn_6), LV_OBJ_FLAG_HIDDEN);
+          }
+
+  # Script to switch to a new light index (called from select buttons)
+  - id: light_switch_index
+    parameters:
+      position: int
+    then:
+      - lambda: |-
+          id(current_light_index) = position;
+          std::string entity = "";
+          switch (position) {
+            case 1: entity = "${light_entity_1}"; break;
+            case 2: entity = "${light_entity_2}"; break;
+            case 3: entity = "${light_entity_3}"; break;
+            case 4: entity = "${light_entity_4}"; break;
+            case 5: entity = "${light_entity_5}"; break;
+            case 6: entity = "${light_entity_6}"; break;
+            default: entity = "${light_entity_1}";
+          }
+          id(current_light_entity) = entity;
+          ESP_LOGD("light_switch", "Switched to light index %d: %s", position, entity.c_str());
+
+          // Copy per-light capabilities to current light capabilities
+          switch (position) {
+            case 1:
+              id(light_supports_color_temp) = id(light_1_supports_color_temp);
+              id(light_supports_hs) = id(light_1_supports_hs);
+              id(light_supports_rgb) = id(light_1_supports_rgb);
+              id(light_supports_brightness) = id(light_1_supports_brightness);
+              break;
+            case 2:
+              id(light_supports_color_temp) = id(light_2_supports_color_temp);
+              id(light_supports_hs) = id(light_2_supports_hs);
+              id(light_supports_rgb) = id(light_2_supports_rgb);
+              id(light_supports_brightness) = id(light_2_supports_brightness);
+              break;
+            case 3:
+              id(light_supports_color_temp) = id(light_3_supports_color_temp);
+              id(light_supports_hs) = id(light_3_supports_hs);
+              id(light_supports_rgb) = id(light_3_supports_rgb);
+              id(light_supports_brightness) = id(light_3_supports_brightness);
+              break;
+            case 4:
+              id(light_supports_color_temp) = id(light_4_supports_color_temp);
+              id(light_supports_hs) = id(light_4_supports_hs);
+              id(light_supports_rgb) = id(light_4_supports_rgb);
+              id(light_supports_brightness) = id(light_4_supports_brightness);
+              break;
+            case 5:
+              id(light_supports_color_temp) = id(light_5_supports_color_temp);
+              id(light_supports_hs) = id(light_5_supports_hs);
+              id(light_supports_rgb) = id(light_5_supports_rgb);
+              id(light_supports_brightness) = id(light_5_supports_brightness);
+              break;
+            case 6:
+              id(light_supports_color_temp) = id(light_6_supports_color_temp);
+              id(light_supports_hs) = id(light_6_supports_hs);
+              id(light_supports_rgb) = id(light_6_supports_rgb);
+              id(light_supports_brightness) = id(light_6_supports_brightness);
+              break;
+          }
+
+          ESP_LOGD("light_switch", "Current capabilities: temp=%d hs=%d rgb=%d bright=%d",
+            id(light_supports_color_temp), id(light_supports_hs),
+            id(light_supports_rgb), id(light_supports_brightness));
+
+          // Force publish all attributes for the new index to templates
+          if (position == 1 && id(light_brightness_1).has_state()) {
+            id(light_brightness).publish_state(id(light_brightness_1).state);
+          } else if (position == 2 && id(light_brightness_2).has_state()) {
+            id(light_brightness).publish_state(id(light_brightness_2).state);
+          } else if (position == 3 && id(light_brightness_3).has_state()) {
+            id(light_brightness).publish_state(id(light_brightness_3).state);
+          } else if (position == 4 && id(light_brightness_4).has_state()) {
+            id(light_brightness).publish_state(id(light_brightness_4).state);
+          } else if (position == 5 && id(light_brightness_5).has_state()) {
+            id(light_brightness).publish_state(id(light_brightness_5).state);
+          } else if (position == 6 && id(light_brightness_6).has_state()) {
+            id(light_brightness).publish_state(id(light_brightness_6).state);
+          }
+
+          // State
+          bool state_val = false;
+          switch (position) {
+            case 1: state_val = id(light_state_1).state; break;
+            case 2: state_val = id(light_state_2).state; break;
+            case 3: state_val = id(light_state_3).state; break;
+            case 4: state_val = id(light_state_4).state; break;
+            case 5: state_val = id(light_state_5).state; break;
+            case 6: state_val = id(light_state_6).state; break;
+            default: state_val = false;
+          }
+          id(light_state).publish_state(state_val);
+
+          // NEW: Update friendly name label from stored globals
+          std::string name = "";
+          switch (position) {
+            case 1: name = id(light_name_1_stored); break;
+            case 2: name = id(light_name_2_stored); break;
+            case 3: name = id(light_name_3_stored); break;
+            case 4: name = id(light_name_4_stored); break;
+            case 5: name = id(light_name_5_stored); break;
+            case 6: name = id(light_name_6_stored); break;
+            default: name = "Light";
+          }
+          ESP_LOGD("light_name_x_stored", "%s", name.c_str());
+          if (name.empty()) {
+            name = "Undefined";
+          }
+          lv_label_set_text(id(light_name_label), name.c_str());
+
+          // Auto-select mode if only one supported
+          if (!(id(light_supports_color_temp) && (id(light_supports_hs) || id(light_supports_rgb)))) {
+            if (id(light_supports_hs) || id(light_supports_rgb)) {
+              id(light_is_temp_mode) = false;
+            } else if (id(light_supports_color_temp)) {
+              id(light_is_temp_mode) = true;
+            }
+            id(light_toggle_gradient).execute();
+          }
+      - script.execute: light_update_layout
+      - script.execute: light_update_lightbulb_color
+      - script.execute: light_update_button_icon_color
+
+# Initial load script (call on boot after delay)
+  - id: light_init
+    then:
+      - delay: 1s
+      - lambda: |-
+          id(current_light_index) = 1;
+          id(current_light_entity) = "${light_entity_1}";
+      - script.execute:
+          id: light_switch_index
+          position: 1
+
+  # Update layout based on supports and mode (like original on_mount)
+  - id: light_update_layout
+    then:
+      # Assume BACK button always at bottom center
+      - lvgl.obj.update:
+          id: light_back_btn
+          align: bottom_mid
+          x: 0
+
+      # MANAGING BRIGHTNESS SLIDER VISIBILITY
+      - if:
+          condition:
+            lambda: 'return id(light_supports_brightness);'
+          then:
+            - lvgl.widget.show: light_brightness_background
+
+            # Check if saturation is visible
+            - if:
+                condition:
+                  lambda: |-
+                    return !id(light_is_temp_mode) &&
+                           (id(light_supports_hs) || id(light_supports_rgb));
+                then:
+                  # Saturation visible → brightness at -160
+                  - lvgl.obj.update:
+                      id: light_brightness_background
+                      x: -160
+                      y: 0
+                      radius: 20
+                      width: 80
+                      height: 260
+                  - lvgl.slider.update:
+                      id: light_brightness_slider
+                      width: 60
+                      height: 240
+                else:
+                  # No saturation → brightness at -110 (ALWAYS VERTICAL)
+                  - lvgl.obj.update:
+                      id: light_brightness_background
+                      x: -110
+                      y: 0
+                      radius: 20
+                      width: 80
+                      height: 260
+                  - lvgl.slider.update:
+                      id: light_brightness_slider
+                      width: 60
+                      height: 240
+          else:
+            - lvgl.widget.hide: light_brightness_background
+
+      # MANAGING SATURATION SLIDER VISIBILITY
+      - if:
+          condition:
+            lambda: 'return id(light_supports_hs) || id(light_supports_rgb);'
+          then:
+            - if:
+                condition:
+                  lambda: 'return !id(light_is_temp_mode);'
+                then:
+                  - lvgl.widget.show: light_saturation_background
+                  - lvgl.obj.update:
+                      id: light_brightness_background
+                      x: -160
+                else:
+                  - lvgl.widget.hide: light_saturation_background
+                  - lvgl.obj.update:
+                      id: light_brightness_background
+                      x: -110
+          else:
+            - lvgl.widget.hide: light_saturation_background
+
+      # MANAGING HS ARC AND GRADIENT VISIBILITY
+      - if:
+          condition:
+            lambda: 'return id(light_supports_hs) || id(light_supports_rgb);'
+          then:
+            - if:
+                condition:
+                  lambda: 'return !id(light_is_temp_mode);'
+                then:
+                  - lvgl.widget.show: light_hue_gradient_obj
+                  - lvgl.widget.show: light_arc_hue
+                else:
+                  - lvgl.widget.hide: light_hue_gradient_obj
+                  - lvgl.widget.hide: light_arc_hue
+          else:
+            - lvgl.widget.hide: light_hue_gradient_obj
+            - lvgl.widget.hide: light_arc_hue
+
+      # MANAGING COLOR TEMP ARC AND GRADIENT VISIBILITY
+      - if:
+          condition:
+            lambda: 'return id(light_supports_color_temp);'
+          then:
+            - if:
+                condition:
+                  lambda: 'return id(light_is_temp_mode);'
+                then:
+                  - lvgl.widget.show: light_color_temp_gradient_obj
+                  - lvgl.widget.show: light_arc_color_temp
+                else:
+                  - lvgl.widget.hide: light_color_temp_gradient_obj
+                  - lvgl.widget.hide: light_arc_color_temp
+          else:
+            - lvgl.widget.hide: light_color_temp_gradient_obj
+            - lvgl.widget.hide: light_arc_color_temp
+
+  # Toggle gradient visibility and reposition
+  - id: light_toggle_gradient
+    then:
+      - if:
+          condition:
+            lambda: 'return id(light_is_temp_mode);'
+          then:
+            - lvgl.widget.show: light_color_temp_gradient_obj
+            - lvgl.widget.show: light_arc_color_temp
+            - lvgl.widget.hide: light_hue_gradient_obj
+            - lvgl.widget.hide: light_arc_hue
+          else:
+            - lvgl.widget.show: light_hue_gradient_obj
+            - lvgl.widget.show: light_arc_hue
+            - lvgl.widget.hide: light_color_temp_gradient_obj
+            - lvgl.widget.hide: light_arc_color_temp
+      - script.execute: light_update_layout  # Reposition sliders
+
+  # Update lightbulb color based on current mode/values (placeholder - implement HSV/RGB conversion)
+  - id: light_update_lightbulb_color
+    then:
+      - lambda: |-
+          bool is_on = id(light_state).state;
+          if (!is_on) {
+            // Off: gray
+            lv_obj_set_style_bg_color(id(light_lightbulb_obj), color_steel_blue, 0);
+            return;
+          }
+
+          // Check if light has color capabilities
+          bool has_color = id(light_supports_color_temp) ||
+                          id(light_supports_hs) ||
+                          id(light_supports_rgb);
+
+          int bright = id(light_current_brightness);
+          lv_color_t col;
+
+          if (!has_color) {
+            // Simple lamp - show bright yellow scaled by brightness
+            // Use a brighter base color and better scaling
+            float bright_scale = 0.7 + (bright / 255.0 * 0.3);  // 70% to 100% range
+            uint8_t val = (uint8_t)(255 * bright_scale);
+            col = lv_color_make(val, val, 0);  // Bright yellow
+          } else if (id(light_is_temp_mode)) {
+            // Kelvin to RGB (Tanner Helland approximation)
+            float kelvin = id(light_current_color_temp);
+            float temp = kelvin / 100.0f;
+            float r_val = 0.0f, g_val = 0.0f, b_val = 0.0f;
+            if (temp <= 66.0f) {
+              r_val = 255.0f;
+              g_val = temp;
+              g_val = 99.4708025861f * log(g_val) - 161.1195681661f;
+              if (temp <= 19.0f) {
+                b_val = 0.0f;
+              } else {
+                b_val = temp - 10.0f;
+                b_val = 138.5177312231f * log(b_val) - 305.0447927307f;
+              }
+            } else {
+              r_val = temp - 60.0f;
+              r_val = 329.698727446f * pow(r_val, -0.1332047592f);
+              g_val = temp - 60.0f;
+              g_val = 288.1221695283f * pow(g_val, -0.0755148492f);
+              b_val = 255.0f;
+            }
+            // Clamp 0-255
+            uint8_t r = (uint8_t)fminf(fmaxf(r_val, 0.0f), 255.0f);
+            uint8_t g = (uint8_t)fminf(fmaxf(g_val, 0.0f), 255.0f);
+            uint8_t b = (uint8_t)fminf(fmaxf(b_val, 0.0f), 255.0f);
+            // Scale by brightness (60% to 100%)
+            float bright_scale = 0.6 + (bright / 255.0 * 0.4);
+            r = (uint8_t)(r * bright_scale);
+            g = (uint8_t)(g * bright_scale);
+            b = (uint8_t)(b * bright_scale);
+            col = lv_color_make(r, g, b);
+          } else {
+            // HS to RGB, scaled by brightness
+            float hue_f = id(light_current_hue);
+            float sat_f = id(light_current_saturation);
+            uint16_t hue = (uint16_t)fminf(fmaxf(hue_f, 0.0f), 359.0f);
+            uint8_t sat = (uint8_t)fminf(fmaxf(sat_f, 0.0f), 100.0f);
+            lv_color_t full = lv_color_hsv_to_rgb(hue, sat, 100);  // Full value
+            lv_color32_t full32;
+            full32.full = lv_color_to32(full);
+            // Scale by brightness (60% to 100%)
+            float bright_scale = 0.6 + (bright / 255.0 * 0.4);
+            uint8_t r = (uint8_t)(full32.ch.red * bright_scale);
+            uint8_t g = (uint8_t)(full32.ch.green * bright_scale);
+            uint8_t b = (uint8_t)(full32.ch.blue * bright_scale);
+            col = lv_color_make(r, g, b);
+          }
+          lv_obj_set_style_bg_color(id(light_lightbulb_obj), col, 0);
+
+  # Update button icon color (similar to bulb)
+  - id: light_update_button_icon_color
+    then:
+      - lambda: |-
+          // Similar logic as above, but for icon label
+          bool is_on = id(light_state).state;
+          if (!is_on) {
+            lv_obj_set_style_text_color(id(light_icon_label), color_steel_blue, 0);
+            return;
+          }
+
+          int bright = id(light_current_brightness);
+          lv_color_t col;
+          if (id(light_is_temp_mode)) {
+            // Reuse Kelvin logic from above (duplicate for simplicity; could extract to global fn)
+            float kelvin = id(light_current_color_temp);
+            float temp = kelvin / 100.0f;
+            float r_val = 0.0f, g_val = 0.0f, b_val = 0.0f;
+            if (temp <= 66.0f) {
+              r_val = 255.0f;
+              g_val = temp;
+              g_val = 99.4708025861f * log(g_val) - 161.1195681661f;
+              if (temp <= 19.0f) {
+                b_val = 0.0f;
+              } else {
+                b_val = temp - 10.0f;
+                b_val = 138.5177312231f * log(b_val) - 305.0447927307f;
+              }
+            } else {
+              r_val = temp - 60.0f;
+              r_val = 329.698727446f * pow(r_val, -0.1332047592f);
+              g_val = temp - 60.0f;
+              g_val = 288.1221695283f * pow(g_val, -0.0755148492f);
+              b_val = 255.0f;
+            }
+            uint8_t r = (uint8_t)fminf(fmaxf(r_val, 0.0f), 255.0f);
+            uint8_t g = (uint8_t)fminf(fmaxf(g_val, 0.0f), 255.0f);
+            uint8_t b = (uint8_t)fminf(fmaxf(b_val, 0.0f), 255.0f);
+            r = (uint8_t)((uint16_t)r * bright / 255);
+            g = (uint8_t)((uint16_t)g * bright / 255);
+            b = (uint8_t)((uint16_t)b * bright / 255);
+            col = lv_color_make(r, g, b);
+          } else {
+            // Reuse HS logic from above
+            float hue_f = id(light_current_hue);
+            float sat_f = id(light_current_saturation);
+            uint16_t hue = (uint16_t)fminf(fmaxf(hue_f, 0.0f), 359.0f);
+            uint8_t sat = (uint8_t)fminf(fmaxf(sat_f, 0.0f), 100.0f);
+            lv_color_t full = lv_color_hsv_to_rgb(hue, sat, 100);
+            lv_color32_t full32;
+            full32.full = lv_color_to32(full);
+            uint8_t r = (uint8_t)((uint16_t)full32.ch.red * bright / 255);
+            uint8_t g = (uint8_t)((uint16_t)full32.ch.green * bright / 255);
+            uint8_t b = (uint8_t)((uint16_t)full32.ch.blue * bright / 255);
+            col = lv_color_make(r, g, b);
+          }
+          lv_obj_set_style_text_color(id(light_icon_label), col, 0);
+
+# Añade esta sección al final de tu light.yaml, después de los scripts
 
 lvgl:
-
   gradients:
-    - id: ${widget_name}_hue_gradient
+    - id: light_hue_gradient
       direction: ver
       dither: none
       stops:
@@ -261,7 +1627,7 @@ lvgl:
         - color: 0xFF0000
           position: 255
 
-    - id: ${widget_name}_color_temp_gradient
+    - id: light_color_temp_gradient
       direction: ver
       dither: none
       stops:
@@ -276,14 +1642,340 @@ lvgl:
         - color: 0xFFD6A0
           position: 255
 
+  on_boot:
+    then:
+      - script.execute: get_light_amount_btn
+      - delay: 500ms
+      - script.execute: light_init
+      # NEW: Select first button with blue shadow
+      - lvgl.obj.update:
+          id: light_btn_1
+          shadow_color: color_misty_blue
+      # NEW: Update all selector icons after initialization
+      - delay: 1s
+      - script.execute: light_update_all_selector_icons
+
+  top_layer:
+    widgets:
+      - obj:
+          id: light_select_widget
+          hidden: true
+          x: -40
+          y: -40
+          width: 300
+          height: 110
+          align: top_left
+          pad_all: 0
+          bg_color: color_slate_blue_gray
+          bg_opa: cover
+          border_opa: transp
+          border_width: 0
+          shadow_color: color_black
+          shadow_spread: 3
+          shadow_width: 8
+          scrollable: false
+          radius: 40
+          widgets:
+            - obj:
+                id: light_select_widget_cont
+                x: -10
+                y: -5
+                width: 240
+                height: 60
+                align: bottom_right
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_evenly
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  - obj:
+                      id: light_btn_1
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: light_icon_1
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_1}"
+                      on_press:
+                        - script.execute:
+                            id: light_switch_index
+                            position: 1
+                        - lvgl.page.show: light_control_page
+                        - lvgl.obj.update:
+                            id: light_btn_1
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: light_btn_2
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_3
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_4
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_5
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_6
+                            shadow_color: color_black
+
+                  - obj:
+                      id: light_btn_2
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: light_icon_2
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_2}"
+                      on_press:
+                        - script.execute:
+                            id: light_switch_index
+                            position: 2
+                        - lvgl.page.show: light_control_page
+                        - lvgl.obj.update:
+                            id: light_btn_1
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_2
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: light_btn_3
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_4
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_5
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_6
+                            shadow_color: color_black
+
+                  - obj:
+                      id: light_btn_3
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: light_icon_3
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_3}"
+                      on_press:
+                        - script.execute:
+                            id: light_switch_index
+                            position: 3
+                        - lvgl.page.show: light_control_page
+                        - lvgl.obj.update:
+                            id: light_btn_1
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_2
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_3
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: light_btn_4
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_5
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_6
+                            shadow_color: color_black
+
+                  - obj:
+                      id: light_btn_4
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: light_icon_4
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_4}"
+                      on_press:
+                        - script.execute:
+                            id: light_switch_index
+                            position: 4
+                        - lvgl.page.show: light_control_page
+                        - lvgl.obj.update:
+                            id: light_btn_1
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_2
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_3
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_4
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: light_btn_5
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_6
+                            shadow_color: color_black
+
+                  - obj:
+                      id: light_btn_5
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: light_icon_5
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_5}"
+                      on_press:
+                        - script.execute:
+                            id: light_switch_index
+                            position: 5
+                        - lvgl.page.show: light_control_page
+                        - lvgl.obj.update:
+                            id: light_btn_1
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_2
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_3
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_4
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_5
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: light_btn_6
+                            shadow_color: color_black
+
+                  - obj:
+                      id: light_btn_6
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: light_icon_6
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_6}"
+                      on_press:
+                        - script.execute:
+                            id: light_switch_index
+                            position: 6
+                        - lvgl.page.show: light_control_page
+                        - lvgl.obj.update:
+                            id: light_btn_1
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_2
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_3
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_4
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_5
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: light_btn_6
+                            shadow_color: color_misty_blue
 
   pages:
-    - id: ${widget_name}_light_page
+    - id: light_control_page
       bg_color: color_slate_blue_gray
+      on_load:
+        - script.execute: light_update_layout
+        - delay: 200ms
+        - script.execute: light_update_lightbulb_color
+        - script.execute: light_update_button_icon_color
+
       widgets:
         # BRIGHTNESS SLIDER
         - obj:
-            id: ${widget_name}_light_brightness_background
+            id: light_brightness_background
             x: -160
             y: 0
             radius: 20
@@ -299,7 +1991,7 @@ lvgl:
             shadow_width: 8
             widgets:
               - slider:
-                  id: ${widget_name}_light_brightness_slider
+                  id: light_brightness_slider
                   radius: 16
                   width: 60
                   height: 240
@@ -316,24 +2008,22 @@ lvgl:
                     radius: 10
                   knob:
                     bg_opa: transp
-                  
-                  # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
                   on_value:
                     - globals.set:
-                        id: ${widget_name}_current_brightness
-                        value: !lambda return int(x);
-                    - script.execute: ${widget_name}_update_lightbulb_color
-                  
+                        id: light_current_brightness
+                        value: !lambda 'return int(x);'
+                    - script.execute: light_update_lightbulb_color
+                    - script.execute: light_update_button_icon_color
                   on_release:
                     - homeassistant.action:
                         action: light.turn_on
                         data:
-                          entity_id: "${light_entity}"
-                          brightness: !lambda return int(x);
+                          entity_id: !lambda 'return id(current_light_entity);'
+                          brightness: !lambda 'return int(x);'
 
         # SATURATION SLIDER
         - obj:
-            id: ${widget_name}_light_saturation_background
+            id: light_saturation_background
             x: -60
             y: 0
             radius: 20
@@ -349,7 +2039,7 @@ lvgl:
             shadow_width: 8
             widgets:
               - slider:
-                  id: ${widget_name}_light_saturation_slider
+                  id: light_saturation_slider
                   radius: 16
                   width: 60
                   height: 240
@@ -366,42 +2056,40 @@ lvgl:
                     radius: 10
                   knob:
                     bg_opa: transp
-                  
-                  # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
                   on_value:
                     - globals.set:
-                        id: ${widget_name}_current_saturation
-                        value: !lambda return x;
-                    - script.execute: ${widget_name}_update_lightbulb_color
-                  
+                        id: light_current_saturation
+                        value: !lambda 'return x;'
+                    - script.execute: light_update_lightbulb_color
+                    - script.execute: light_update_button_icon_color
                   on_release:
                     - homeassistant.action:
                         action: light.turn_on
                         data:
-                          entity_id: "${light_entity}"
+                          entity_id: !lambda 'return id(current_light_entity);'
                         data_template:
                           hs_color: "{{ (hue|float, sat|float)|list }}"
                         variables:
-                          hue: !lambda return id(${widget_name}_current_hue);
-                          sat: !lambda return x;
+                          hue: !lambda 'return id(light_current_hue);'
+                          sat: !lambda 'return x;'
 
-        # LIGHT NAME                  
+        # LIGHT NAME
         - label:
-            id: ${widget_name}_light_name_label
+            id: light_name_label
             y: -30
             x: 0
             height: 40
             width: 240
             long_mode: dot
             align: bottom_left
-            text_font: nunito_16
+            text_font: nunito_20
             text_align: center
             text_color: color_misty_blue
-            text: "Friendly name"
+            text: "Light"
 
-        # LIGHT ARC
+        # LIGHT ARC CONTAINER
         - obj:
-            id: ${widget_name}_light_bg_main_temperature
+            id: light_bg_main_temperature
             hidden: false
             width: 240
             height: 480
@@ -410,11 +2098,10 @@ lvgl:
             bg_opa: transp
             clickable: false
             scrollable: false
-            border_opa: transp 
+            border_opa: transp
             border_width: 0
             shadow_opa: transp
             widgets:
-
               - obj:
                   x: 240
                   width: 480
@@ -438,9 +2125,9 @@ lvgl:
                         border_color: color_black
                         border_opa: 40%
                         border_width: 3
-              
+
               - obj:
-                  id: ${widget_name}_hue_gradient_obj
+                  id: light_hue_gradient_obj
                   hidden: true
                   x: 222
                   width: 444
@@ -448,21 +2135,21 @@ lvgl:
                   radius: 222
                   align: right_mid
                   pad_all: 0
-                  bg_grad: ${widget_name}_hue_gradient
+                  bg_grad: light_hue_gradient
                   bg_grad_dir: ver
                   shadow_opa: transp
                   border_opa: transp
                   border_width: 0
 
               - obj:
-                  id: ${widget_name}_color_temp_gradient_obj
+                  id: light_color_temp_gradient_obj
                   x: 222
                   width: 444
                   height: 444
                   radius: 222
                   align: right_mid
                   pad_all: 0
-                  bg_grad: ${widget_name}_color_temp_gradient
+                  bg_grad: light_color_temp_gradient
                   bg_grad_dir: ver
                   shadow_opa: transp
                   border_opa: transp
@@ -490,7 +2177,7 @@ lvgl:
                   border_width: 3
                   border_opa: 15%
 
-              # BACKGROUND ARC
+              # ARCS CONTAINER
               - obj:
                   x: 222
                   width: 444
@@ -503,9 +2190,9 @@ lvgl:
                   border_opa: transp
                   border_width: 0
                   widgets:
-                    # ARC для HUE (оттенок)
+                    # ARC HUE
                     - arc:
-                        id: ${widget_name}_light_arc_hue
+                        id: light_arc_hue
                         hidden: true
                         clickable: true
                         adjustable: true
@@ -530,28 +2217,26 @@ lvgl:
                           border_color: color_steel_blue
                           border_width: 4
                           shadow_opa: transp
-                        
-                        # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
                         on_value:
                           - globals.set:
-                              id: ${widget_name}_current_hue
-                              value: !lambda return x;
-                          - script.execute: ${widget_name}_update_lightbulb_color
-
+                              id: light_current_hue
+                              value: !lambda 'return x;'
+                          - script.execute: light_update_lightbulb_color
+                          - script.execute: light_update_button_icon_color
                         on_release:
                           - homeassistant.action:
                               action: light.turn_on
                               data:
-                                entity_id: "${light_entity}"
+                                entity_id: !lambda 'return id(current_light_entity);'
                               data_template:
                                 hs_color: "{{ (hue|float, sat|float)|list }}"
                               variables:
-                                hue: !lambda return x;
-                                sat: !lambda return id(${widget_name}_current_saturation);
+                                hue: !lambda 'return x;'
+                                sat: !lambda 'return id(light_current_saturation);'
 
-                    # ARC для COLOR TEMP (цветовая температура)
+                    # ARC COLOR TEMP
                     - arc:
-                        id: ${widget_name}_light_arc_color_temp
+                        id: light_arc_color_temp
                         hidden: false
                         clickable: true
                         adjustable: true
@@ -576,24 +2261,22 @@ lvgl:
                           border_color: color_steel_blue
                           border_width: 4
                           shadow_opa: transp
-                        
-                        # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
                         on_value:
                           - globals.set:
-                              id: ${widget_name}_current_color_temp
-                              value: !lambda return x;
-                          - script.execute: ${widget_name}_update_lightbulb_color
-
+                              id: light_current_color_temp
+                              value: !lambda 'return x;'
+                          - script.execute: light_update_lightbulb_color
+                          - script.execute: light_update_button_icon_color
                         on_release:
                           - homeassistant.action:
                               action: light.turn_on
                               data:
-                                entity_id: "${light_entity}"
-                                color_temp_kelvin: !lambda return int(x);
+                                entity_id: !lambda 'return id(current_light_entity);'
+                                color_temp_kelvin: !lambda 'return int(x);'
 
-        # LIGHTBULB
+        # LIGHTBULB BUTTON
         - obj:
-            id: ${widget_name}_lightbulb_btn
+            id: light_lightbulb_btn
             x: 0
             width: 160
             height: 160
@@ -605,9 +2288,8 @@ lvgl:
             shadow_opa: transp
             radius: 100
             widgets:
-              # ВИДЖЕТ ЦВЕТА ЛАМПОЧКИ - обновляется динамически
               - obj:
-                  id: ${widget_name}_lightbulb_color
+                  id: light_lightbulb_obj
                   clickable: false
                   x: 0
                   y: -30
@@ -618,18 +2300,26 @@ lvgl:
                   bg_color: color_light_gray
                   border_opa: transp
                   shadow_opa: transp
-                  
+
               - image:
-                  id: ${widget_name}_lightbulb_image
+                  id: light_lightbulb_image
                   x: 0
                   y: 23
                   align: center
                   src: lightbulb_image
 
+              - label:
+                  id: light_icon_label
+                  align: center
+                  y: -30
+                  text_font: mdi_icons_40
+                  text_color: color_misty_blue
+                  text: "${lightbulb}"
 
-        # BACK
+
+        # BACK BUTTON
         - obj:
-            id: ${widget_name}_light_back_btn 
+            id: light_back_btn
             x: 150
             y: 0
             width: 80
@@ -657,463 +2347,3 @@ lvgl:
               - lvgl.widget.hide: light_select_widget
               - delay: 100ms
               - lvgl.page.show: home_page
-
-
-script:
-  # ═══════════════════════════════════════════════════════════════════════════
-  # СКРИПТ: Переключение между режимами color_temp и hs
-  # ═══════════════════════════════════════════════════════════════════════════
-  - id: ${widget_name}_toggle_gradient
-    then:
-      - if:
-          condition:
-            lambda: return id(${widget_name}_is_temp_mode);
-          then:
-            # ─────────────────────────────────────────────────────────────────
-            # РЕЖИМ COLOR_TEMP
-            # ─────────────────────────────────────────────────────────────────
-            - lvgl.widget.hide: ${widget_name}_hue_gradient_obj
-            - lvgl.widget.hide: ${widget_name}_light_arc_hue
-            - lvgl.widget.show: ${widget_name}_color_temp_gradient_obj
-            - lvgl.widget.show: ${widget_name}_light_arc_color_temp
-            - lvgl.widget.hide: ${widget_name}_light_saturation_background
-            - lvgl.obj.update:
-                id: ${widget_name}_light_brightness_background
-                x: -110
-
-          else:
-            # ─────────────────────────────────────────────────────────────────
-            # РЕЖИМ HUE/SATURATION
-            # ─────────────────────────────────────────────────────────────────
-            - lvgl.widget.hide: ${widget_name}_color_temp_gradient_obj
-            - lvgl.widget.hide: ${widget_name}_light_arc_color_temp
-            - lvgl.widget.show: ${widget_name}_hue_gradient_obj
-            - lvgl.widget.show: ${widget_name}_light_arc_hue
-            - if:
-                condition:
-                  lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
-                then:
-                  - lvgl.widget.show: ${widget_name}_light_saturation_background
-                  - lvgl.obj.update:
-                      id: ${widget_name}_light_brightness_background
-                      x: -160
-
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # СКРИПТ: Обновление цвета виджета лампочки
-  # ═══════════════════════════════════════════════════════════════════════════
-  - id: ${widget_name}_update_lightbulb_color
-    then:
-      - lambda: |-
-          int r = 255, g = 255, b = 255;
-          
-          // ═══════════════════════════════════════════════════════════════════
-          // ПРОВЕРЯЕМ: Поддерживает ли лампа цветовые режимы?
-          // ═══════════════════════════════════════════════════════════════════
-          bool has_color_modes = id(${widget_name}_supports_hs) || 
-                                 id(${widget_name}_supports_rgb) || 
-                                 id(${widget_name}_supports_color_temp);
-          
-          // ═══════════════════════════════════════════════════════════════════
-          // ПРОВЕРЯЕМ: Включена ли лампа?
-          // ═══════════════════════════════════════════════════════════════════
-          bool is_light_on = id(${widget_name}_light_state).state;
-          
-          if (!is_light_on) {
-            // ═════════════════════════════════════════════════════════════════
-            // ЛАМПА ВЫКЛЮЧЕНА → СЕРЫЙ ЦВЕТ (независимо от режима)
-            // ═════════════════════════════════════════════════════════════════
-            r = 153;  // 60% от 255
-            g = 153;
-            b = 153;
-            
-          } else if (has_color_modes) {
-            // ═════════════════════════════════════════════════════════════════
-            // РЕЖИМ 1: ЛАМПА ВКЛЮЧЕНА + ПОДДЕРЖКА ЦВЕТА (HS/RGB/ColorTemp)
-            // ═════════════════════════════════════════════════════════════════
-            
-            if (id(${widget_name}_is_temp_mode)) {
-              // ───────────────────────────────────────────────────────────────
-              // ПОДРЕЖИМ: ЦВЕТОВАЯ ТЕМПЕРАТУРА (Color Temp)
-              // Конвертируем Kelvin → RGB
-              // ───────────────────────────────────────────────────────────────
-              float temp = id(${widget_name}_current_color_temp) / 100.0;
-              
-              // Алгоритм конвертации цветовой температуры в RGB
-              // Источник: Tanner Helland algorithm
-              
-              // Красный канал
-              if (temp <= 66) {
-                r = 255;
-              } else {
-                r = temp - 60;
-                r = 329.698727446 * pow(r, -0.1332047592);
-                r = (r < 0) ? 0 : ((r > 255) ? 255 : r);
-              }
-              
-              // Зеленый канал
-              if (temp <= 66) {
-                g = temp;
-                g = 99.4708025861 * log(g) - 161.1195681661;
-              } else {
-                g = temp - 60;
-                g = 288.1221695283 * pow(g, -0.0755148492);
-              }
-              g = (g < 0) ? 0 : ((g > 255) ? 255 : g);
-              
-              // Синий канал
-              if (temp >= 66) {
-                b = 255;
-              } else if (temp <= 19) {
-                b = 0;
-              } else {
-                b = temp - 10;
-                b = 138.5177312231 * log(b) - 305.0447927307;
-                b = (b < 0) ? 0 : ((b > 255) ? 255 : b);
-              }            
-              
-            } else {
-              // ───────────────────────────────────────────────────────────────
-              // ПОДРЕЖИМ: HUE/SATURATION (HS)
-              // Конвертируем HSV → RGB
-              // ───────────────────────────────────────────────────────────────
-              float h = id(${widget_name}_current_hue);
-              float s = id(${widget_name}_current_saturation) / 100.0;
-              float v = 1.0; // Используем полную яркость для отображения цвета
-              
-              float c = v * s;
-              float x = c * (1 - fabs(fmod(h / 60.0, 2) - 1));
-              float m = v - c;
-              
-              float r_prime, g_prime, b_prime;
-              
-              if (h >= 0 && h < 60) {
-                r_prime = c; g_prime = x; b_prime = 0;
-              } else if (h >= 60 && h < 120) {
-                r_prime = x; g_prime = c; b_prime = 0;
-              } else if (h >= 120 && h < 180) {
-                r_prime = 0; g_prime = c; b_prime = x;
-              } else if (h >= 180 && h < 240) {
-                r_prime = 0; g_prime = x; b_prime = c;
-              } else if (h >= 240 && h < 300) {
-                r_prime = x; g_prime = 0; b_prime = c;
-              } else {
-                r_prime = c; g_prime = 0; b_prime = x;
-              }
-              
-              r = (r_prime + m) * 255;
-              g = (g_prime + m) * 255;
-              b = (b_prime + m) * 255;
-              
-            }
-            
-            // ─────────────────────────────────────────────────────────────────
-            // Применяем масштабирование яркости: 60% → 100%
-            // ─────────────────────────────────────────────────────────────────
-            float real_brightness = id(${widget_name}_current_brightness) / 255.0;
-            float brightness_display = 0.6 + (real_brightness * 0.4);
-            
-            r = r * brightness_display;
-            g = g * brightness_display;
-            b = b * brightness_display;     
-            
-          } else {
-            // ═════════════════════════════════════════════════════════════════
-            // РЕЖИМ 2: ЛАМПА ВКЛЮЧЕНА + БЕЗ ЦВЕТА (brightness/onoff)
-            // ═════════════════════════════════════════════════════════════════
-            
-            // ───────────────────────────────────────────────────────────────
-            // ЛАМПА ВКЛЮЧЕНА → ЖЕЛТЫЙ ЦВЕТ (0xFFFF00)
-            // ───────────────────────────────────────────────────────────────
-            r = 255;
-            g = 255;
-            b = 0;
-            
-            // Если есть brightness - применяем масштабирование
-            if (id(${widget_name}_supports_brightness)) {
-              float real_brightness = id(${widget_name}_current_brightness) / 255.0;
-              float brightness_display = 0.6 + (real_brightness * 0.4);
-              
-              r = r * brightness_display;
-              g = g * brightness_display;
-              b = b * brightness_display;
-              
-            } else {
-              // Без brightness - просто желтый на 80%
-              r = 204; // 80% от 255
-              g = 204;
-              b = 0;
-              
-            }
-          }
-          
-          // ═══════════════════════════════════════════════════════════════════
-          // ПРИМЕНЕНИЕ ЦВЕТА К ВИДЖЕТУ
-          // ═══════════════════════════════════════════════════════════════════
-          
-          // Формируем цвет в формате 0xRRGGBB
-          uint32_t color = (r << 16) | (g << 8) | b;
-          
-          // Устанавливаем цвет виджета лампочки
-          lv_obj_set_style_bg_color(id(${widget_name}_lightbulb_color), lv_color_hex(color), 0);
-          lv_obj_set_style_text_color(id(${widget_name}_icon), lv_color_hex(color), 0);
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # СКРИПТ: Обновление видимости виджетов
-  # ═══════════════════════════════════════════════════════════════════════════
-  - id: ${widget_name}_update_widget_visibility
-    then:
-      # ═════════════════════════════════════════════════════════════════════
-      # УПРАВЛЕНИЕ ВИДИМОСТЬЮ АРОК И ПОЗИЦИЕЙ КНОПКИ ЛАМПОЧКИ
-      # ═════════════════════════════════════════════════════════════════════
-      - lambda: |-
-          // Проверяем наличие "арочных" режимов (HS или ColorTemp)
-          bool has_arc_modes = id(${widget_name}_supports_hs) || 
-                               id(${widget_name}_supports_rgb) || 
-                               id(${widget_name}_supports_color_temp);
-      
-      - if:
-          condition:
-            lambda: |-
-              return id(${widget_name}_supports_hs) || 
-                     id(${widget_name}_supports_rgb) || 
-                     id(${widget_name}_supports_color_temp);
-          then:
-            # ─────────────────────────────────────────────────────────────────
-            # ЕСТЬ АРОЧНЫЕ РЕЖИМЫ → Показываем арки, кнопка справа
-            # ─────────────────────────────────────────────────────────────────
-            - lvgl.widget.show: ${widget_name}_light_bg_main_temperature
-            - lvgl.obj.update:
-                id: ${widget_name}_lightbulb_btn
-                align: right_mid
-                x: 0
-                y: 0
-            - lvgl.obj.update:
-                id: ${widget_name}_light_back_btn
-                align: bottom_left
-                x: 150
-            # Label в режиме с арками
-            - lvgl.obj.update:
-                id: ${widget_name}_light_name_label
-                align: bottom_left
-                x: 20
-
-          else:
-            # ─────────────────────────────────────────────────────────────────
-            # НЕТ АРОЧНЫХ РЕЖИМОВ → Скрываем арки, позиционируем кнопки
-            # ─────────────────────────────────────────────────────────────────
-            - lvgl.widget.hide: ${widget_name}_light_bg_main_temperature
-            
-            # Label в режиме БЕЗ арок
-            - lvgl.obj.update:
-                id: ${widget_name}_light_name_label
-                align: bottom_mid
-                x: 0
-            
-            # Проверяем: onoff режим (кнопка в центр) или brightness (кнопка выше центра)
-            - if:
-                condition:
-                  lambda: 'return !id(${widget_name}_supports_brightness);'
-                then:
-                  # ═══════════════════════════════════════════════════════════
-                  # РЕЖИМ ONOFF → Кнопка лампочки в центр
-                  # ═══════════════════════════════════════════════════════════
-                  - lvgl.obj.update:
-                      id: ${widget_name}_lightbulb_btn
-                      align: center
-                      x: 0
-                      y: -40
-                else:
-                  # ═══════════════════════════════════════════════════════════
-                  # РЕЖИМ BRIGHTNESS БЕЗ АРОК → Кнопка лампочки выше центра
-                  # ═══════════════════════════════════════════════════════════
-                  - lvgl.obj.update:
-                      id: ${widget_name}_lightbulb_btn
-                      align: center
-                      x: 0
-                      y: -40
-            
-            # Кнопка BACK всегда внизу по центру в режимах без арок
-            - lvgl.obj.update:
-                id: ${widget_name}_light_back_btn
-                align: bottom_mid
-                x: 0
-      
-      # ─────────────────────────────────────────────────────────────────────
-      # УПРАВЛЕНИЕ ВИДИМОСТЬЮ СЛАЙДЕРА ЯРКОСТИ
-      # ─────────────────────────────────────────────────────────────────────
-      - if:
-          condition:
-            lambda: 'return id(${widget_name}_supports_brightness);'
-          then:
-            - lvgl.widget.show: ${widget_name}_light_brightness_background
-            
-            # Проверяем режим (с арками или без)
-            - if:
-                condition:
-                  lambda: |-
-                    return id(${widget_name}_supports_hs) || 
-                           id(${widget_name}_supports_rgb) || 
-                           id(${widget_name}_supports_color_temp);
-                then:
-                  # ═══════════════════════════════════════════════════════════
-                  # РЕЖИМ С АРКАМИ → Вертикальный слайдер слева
-                  # ═══════════════════════════════════════════════════════════
-                  - if:
-                      condition:
-                        lambda: |-
-                          return !id(${widget_name}_is_temp_mode) && 
-                                 (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb));
-                      then:
-                        # Saturation видим → brightness на -160
-                        - lvgl.obj.update:
-                            id: ${widget_name}_light_brightness_background
-                            x: -160
-                            y: 0
-                            radius: 20
-                            width: 80
-                            height: 260
-                        - lvgl.slider.update:
-                            id: ${widget_name}_light_brightness_slider
-                            width: 60
-                            height: 240
-                      else:
-                        # Saturation скрыт → brightness на -110
-                        - lvgl.obj.update:
-                            id: ${widget_name}_light_brightness_background
-                            x: -110
-                            y: 0
-                            radius: 20
-                            width: 80
-                            height: 260
-                        - lvgl.slider.update:
-                            id: ${widget_name}_light_brightness_slider
-                            width: 60
-                            height: 240
-                else:
-                  # ═══════════════════════════════════════════════════════════
-                  # РЕЖИМ БЕЗ АРОК → Горизонтальный слайдер по центру
-                  # ═══════════════════════════════════════════════════════════
-                  - lvgl.obj.update:
-                      id: ${widget_name}_light_brightness_background
-                      x: 0
-                      y: 100
-                      radius: 20
-                      width: 260
-                      height: 80
-                  - lvgl.slider.update:
-                      id: ${widget_name}_light_brightness_slider
-                      width: 240
-                      height: 60
-
-          else:
-            - lvgl.widget.hide: ${widget_name}_light_brightness_background
-      
-      # ─────────────────────────────────────────────────────────────────────
-      # УПРАВЛЕНИЕ ВИДИМОСТЬЮ СЛАЙДЕРА НАСЫЩЕННОСТИ
-      # ─────────────────────────────────────────────────────────────────────
-      - if:
-          condition:
-            lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
-          then:
-            # Если мы в режиме HS - показываем, если в режиме temp - скрываем
-            - if:
-                condition:
-                  lambda: 'return !id(${widget_name}_is_temp_mode);'
-                then:
-                  - lvgl.widget.show: ${widget_name}_light_saturation_background
-                  # Brightness на исходной позиции
-                  - lvgl.obj.update:
-                      id: ${widget_name}_light_brightness_background
-                      x: -160
-
-                else:
-                  - lvgl.widget.hide: ${widget_name}_light_saturation_background
-                  # Brightness сдвинут вправо
-                  - lvgl.obj.update:
-                      id: ${widget_name}_light_brightness_background
-                      x: -110
-
-          else:
-            - lvgl.widget.hide: ${widget_name}_light_saturation_background
-      
-      # ─────────────────────────────────────────────────────────────────────
-      # УПРАВЛЕНИЕ ВИДИМОСТЬЮ HS ДУГИ И ГРАДИЕНТА
-      # ─────────────────────────────────────────────────────────────────────
-      - if:
-          condition:
-            lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
-          then:
-            # Поддерживается HS - показываем дугу и градиент в режиме HS
-            - if:
-                condition:
-                  lambda: 'return !id(${widget_name}_is_temp_mode);'
-                then:
-                  - lvgl.widget.show: ${widget_name}_hue_gradient_obj
-                  - lvgl.widget.show: ${widget_name}_light_arc_hue
-
-                else:
-                  - lvgl.widget.hide: ${widget_name}_hue_gradient_obj
-                  - lvgl.widget.hide: ${widget_name}_light_arc_hue
-
-          else:
-            # HS не поддерживается - всегда скрываем
-            - lvgl.widget.hide: ${widget_name}_hue_gradient_obj
-            - lvgl.widget.hide: ${widget_name}_light_arc_hue
-      
-      # ─────────────────────────────────────────────────────────────────────
-      # УПРАВЛЕНИЕ ВИДИМОСТЬЮ COLOR TEMP ДУГИ И ГРАДИЕНТА
-      # ─────────────────────────────────────────────────────────────────────
-      - if:
-          condition:
-            lambda: 'return id(${widget_name}_supports_color_temp);'
-          then:
-            # Поддерживается Color Temp - показываем дугу и градиент в режиме temp
-            - if:
-                condition:
-                  lambda: 'return id(${widget_name}_is_temp_mode);'
-                then:
-                  - lvgl.widget.show: ${widget_name}_color_temp_gradient_obj
-                  - lvgl.widget.show: ${widget_name}_light_arc_color_temp
-
-                else:
-                  - lvgl.widget.hide: ${widget_name}_color_temp_gradient_obj
-                  - lvgl.widget.hide: ${widget_name}_light_arc_color_temp
-
-          else:
-            # Color Temp не поддерживается - всегда скрываем
-            - lvgl.widget.hide: ${widget_name}_color_temp_gradient_obj
-            - lvgl.widget.hide: ${widget_name}_light_arc_color_temp
-      
-      # ─────────────────────────────────────────────────────────────────────
-      # АВТОМАТИЧЕСКИЙ ВЫБОР РЕЖИМА (если лампа поддерживает только один)
-      # ─────────────────────────────────────────────────────────────────────
-      - if:
-          condition:
-            lambda: |-
-              // Если лампа НЕ поддерживает оба режима - выбираем доступный
-              return !(id(${widget_name}_supports_color_temp) && 
-                      (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb)));
-          then:
-            
-            # Автоматический выбор режима
-            - if:
-                condition:
-                  lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
-                then:
-                  # Если поддерживается только цвет - переключаемся в режим HS
-                  - lambda: |-
-                      id(${widget_name}_is_temp_mode) = false;
-                  - script.execute: ${widget_name}_toggle_gradient
-                else:
-                  - if:
-                      condition:
-                        lambda: 'return id(${widget_name}_supports_color_temp);'
-                      then:
-                        # Если поддерживается только температура - переключаемся в режим temp
-                        - lambda: |-
-                            id(${widget_name}_is_temp_mode) = true;
-                        - script.execute: ${widget_name}_toggle_gradient
-

@@ -101,3 +101,26 @@ cover:
     open: Ouvert
     opening: Ouverture
     stopped: Arrêté
+
+alarm_panel:
+  name: "Centrale d’alarme"
+  enter_pass: "Entrez le mot de passe"
+  wrong_pass: "Mot de passe incorrect"
+  state:
+    armed: Activée
+    armed_away: Activée (absence)
+    armed_custom_bypass: Activée (exception personnalisée)
+    armed_home: Activée (présence)
+    armed_night: Activée (nuit)
+    armed_vacation: Activée (vacances)
+    arming: Activation
+    disarmed: Désactivée
+    disarming: Désactivation
+    pending: En suspens
+    triggered: Déclenchée
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

@@ -2,6 +2,10 @@ packages:
   animations: !include animations.yaml
 
 globals:
+  - id: active_lvgl_page
+    type: std::string
+    restore_value: false
+    initial_value: '"home_page"'
 
   - id: display_lock
     type: bool
@@ -13,34 +17,33 @@ globals:
     restore_value: yes
     initial_value: '2'
 
-  # Данные daily прогноза
+  # Daily forecast data
   - id: forecast_daily_count
     type: int
     initial_value: '0'
-  
+
   - id: forecast_daily_timestamps
     type: time_t[10]
-  
+
   - id: forecast_daily_temps
     type: float[10]
-  
+
   - id: forecast_daily_conditions
     type: std::string[10]
-  
-  # Данные hourly прогноза
+
+  # Hourly forecast data
   - id: forecast_hourly_count
     type: int
     initial_value: '0'
-  
+
   - id: forecast_hourly_timestamps
     type: time_t[15]
-  
+
   - id: forecast_hourly_temps
     type: float[15]
-  
+
   - id: forecast_hourly_conditions
     type: std::string[15]
-
 
   - id: current_language
     type: std::string
@@ -56,7 +59,6 @@ globals:
     restore_value: no
     initial_value: 'false'
 
-
 number:
   - platform: template
     id: display_timeout_backlight
@@ -69,7 +71,6 @@ number:
     max_value: 720
     step: 1
     mode: box
-
 
 switch:
   - platform: lvgl
@@ -138,7 +139,7 @@ sensor:
     id: weather_forecast_daily_count
     entity_id: sensor.display_tools_forecasts_daily
     internal: true
-  
+
   # Weather forecast hourly count
   - platform: homeassistant
     id: weather_forecast_hourly_count
@@ -150,7 +151,7 @@ sensor:
     id: weather_temperature_sensor
     entity_id: "${weather_entity}"
     attribute: temperature
-    on_value: 
+    on_value:
       then:
         - lvgl.label.update:
             id: weather_temperature_value
@@ -163,7 +164,7 @@ sensor:
     id: weather_humidity_sensor
     entity_id: "${weather_entity}"
     attribute: humidity
-    on_value: 
+    on_value:
       then:
         - lvgl.label.update:
             id: weather_humidity_value
@@ -176,7 +177,7 @@ sensor:
     id: weather_wind_speed_sensor
     entity_id: "${weather_entity}"
     attribute: wind_speed
-    on_value: 
+    on_value:
       then:
         - if:
             condition:
@@ -192,13 +193,13 @@ sensor:
                   id: weather_wind_speed_value
                   text:
                     format: "%.0f "
-                    args: [id(weather_wind_speed_sensor).state]            
+                    args: [id(weather_wind_speed_sensor).state]
 
   # Home temperature sensor
   - platform: homeassistant
     id: home_temperature_sensor
     entity_id: "${temperature_entity}"
-    on_value: 
+    on_value:
       then:
         - lvgl.label.update:
             id: circle_home_widget_temp_value
@@ -210,7 +211,7 @@ sensor:
   - platform: homeassistant
     id: home_humidity_sensor
     entity_id: "${humidity_entity}"
-    on_value: 
+    on_value:
       then:
         - lvgl.label.update:
             id: circle_home_widget_hum_value
@@ -252,7 +253,7 @@ sensor:
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "%"
-    on_value: 
+    on_value:
       then:
         - lvgl.label.update:
             id: wifi_status
@@ -284,7 +285,7 @@ text_sensor:
   - platform: homeassistant
     id: weather_state_sensor
     entity_id: "${weather_entity}"
-    on_value: 
+    on_value:
       then:
         - delay: 1s
         - script.execute: update_weather_image
@@ -315,8 +316,8 @@ text_sensor:
   - platform: homeassistant
     id: weather_wind_speed_unit_sensor
     entity_id: "${weather_entity}"
-    attribute: wind_speed_unit    
-    on_value: 
+    attribute: wind_speed_unit
+    on_value:
       then:
         - lvgl.label.update:
             id: weather_wind_speed_unit
@@ -357,7 +358,6 @@ text_sensor:
             text: !lambda 'return id(esphome_version).state;'
 
 lvgl:
-
   on_idle:
     timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
     then:
@@ -367,7 +367,7 @@ lvgl:
           then:
             - logger.log: "LVGL is idle"
             - light.turn_off: display_backlight
-            - lvgl.pause:
+            - script.execute: pause_lvgl_display  # ✅ Use centralized script
           else:
             - logger.log: "LVGL idle, but backlight is on"
 
@@ -507,7 +507,7 @@ lvgl:
                     #     text_color: color_misty_blue
                     #     text: "%"
                     #     text_align: right
-                      
+
                     - label:
                         id: weather_humidity_icon
                         x: -30
@@ -565,7 +565,7 @@ lvgl:
                         border_opa: transp
                         shadow_opa: transp
 
-              - obj: 
+              - obj:
                   id: datetime_widget
                   y: 80
                   hidden: false
@@ -617,7 +617,7 @@ lvgl:
                         shadow_opa: transp
 
 
-              - obj: 
+              - obj:
                   id: weather_widget
                   y: 40
                   hidden: true
@@ -658,7 +658,7 @@ lvgl:
                   border_width: 0
                   shadow_opa: transp
                   widgets:
-                    - label:  
+                    - label:
                         id: wifi_signal_info_label
                         x: 20
                         y: 30
@@ -666,7 +666,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "WiFi Signal:"
-                    - label:  
+                    - label:
                         id: wifi_signal_info_state
                         x: -20
                         y: 30
@@ -674,7 +674,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "-59 dBm"
-                    - label:  
+                    - label:
                         id: ip_address_info_label
                         x: 20
                         y: 70
@@ -682,7 +682,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "IP Address:"
-                    - label:  
+                    - label:
                         id: ip_address_info_state
                         x: -20
                         y: 70
@@ -690,7 +690,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "192.168.0.10"
-                    - label:  
+                    - label:
                         id: mac_address_info_label
                         x: 20
                         y: 110
@@ -698,7 +698,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "MAC Address:"
-                    - label:  
+                    - label:
                         id: mac_address_info_state
                         x: -20
                         y: 110
@@ -706,7 +706,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "12:34:56:78:90:AB"
-                    - label:  
+                    - label:
                         id: esphome_version_info_label
                         x: 20
                         y: 150
@@ -714,7 +714,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "ESPHome Version:"
-                    - label:  
+                    - label:
                         id: esphome_version_info_state
                         x: -20
                         y: 150
@@ -751,7 +751,7 @@ lvgl:
                         border_width: 0
                         shadow_opa: transp
                         widgets:
-                          - label:  
+                          - label:
                               id: backlight_settings_brightness_label
                               y: 20
                               align: top_mid
@@ -793,7 +793,7 @@ lvgl:
                         border_width: 0
                         shadow_opa: transp
                         widgets:
-                          - label:  
+                          - label:
                               id: backlight_settings_sleep_time_label
                               y: 20
                               align: top_mid
@@ -836,7 +836,6 @@ lvgl:
                                     - globals.set:
                                         id: display_timeout
                                         value: !lambda return x;
-
 
         - obj:
             id: weather_state_images
@@ -1020,7 +1019,8 @@ lvgl:
                                 bg_color: color_steel_blue
                                 shadow_width: 4
                               on_click:
-                                - lvgl.page.show: ${light_widget_name_1}_light_page
+                                #- lvgl.page.show: ${light_widget_name_1}_light_page
+                                - lvgl.page.show: light_control_page
                                 - delay: 250ms
                                 - lambda: |-
                                     int lights = ${lights_amount};
@@ -1035,7 +1035,7 @@ lvgl:
                               clickable: false
                               radius: 45
                               pad_all: 0
-                              bg_opa: transp 
+                              bg_opa: transp
                               border_opa: transp
                               shadow_width: 4
                               shadow_color: 0xFFFFFF
@@ -1100,7 +1100,7 @@ lvgl:
                               clickable: false
                               radius: 45
                               pad_all: 0
-                              bg_opa: transp 
+                              bg_opa: transp
                               border_opa: transp
                               shadow_width: 4
                               shadow_color: 0xFFFFFF
@@ -1227,6 +1227,7 @@ lvgl:
                           flex_flow: column
                           flex_align_main: center
                           flex_align_cross: center
+                        widgets: []
 
                     - obj:
                         id: weather_forecast_hourly
@@ -1246,8 +1247,9 @@ lvgl:
                           flex_flow: column
                           flex_align_main: center
                           flex_align_cross: center
+                        widgets: []
 
-        # SYSTEM BUTTONS (DOWN) 
+        # SYSTEM BUTTONS (DOWN)
         - obj:
             id: menu_controls_background
             x: 0
@@ -1301,8 +1303,7 @@ lvgl:
                   on_click:
                     - delay: 1s
                     - light.turn_off: display_backlight
-                    - lvgl.pause:
-
+                    - script.execute: pause_lvgl_display  # ✅ Use centralized script
 
               - button:
                   id: home_widget_btn
@@ -1620,7 +1621,54 @@ mapping:
       si: flags_si_img
       pl: flags_pl_img
 
+#script:
+#  # Centralized LVGL pause handler
+#  - id: pause_lvgl_display
+#    mode: restart
+#    then:
+#      - logger.log: "Pausing LVGL display"
+#      # Hide all select widgets
+#      - lvgl.widget.hide: cover_select_widget
+#      - lvgl.widget.hide: thermo_select_widget
+#      - lvgl.widget.hide: fan_select_widget
+#      - lvgl.widget.hide: light_select_widget
+#      # Switch to home page
+#      - logger.log: "Switching to Home Page"
+#      - lvgl.page.show: home_page
+#      - delay: 500ms
+#      # Pause LVGL
+#      - lvgl.pause:
+
 script:
+  # Centralized LVGL pause handler
+  - id: pause_lvgl_display
+    mode: restart
+    then:
+      - logger.log: "Pausing LVGL display"
+
+      # Hide all select widgets
+      - lvgl.widget.hide: cover_select_widget
+      - lvgl.widget.hide: thermo_select_widget
+      - lvgl.widget.hide: fan_select_widget
+      - lvgl.widget.hide: light_select_widget
+
+      # ✅ Use existing switch_to_mode to properly return to HOME
+      - if:
+          condition:
+            lambda: 'return id(current_mode) != 0;'
+          then:
+            - script.execute:
+                id: switch_to_mode
+                target_mode: 0
+            - script.wait: switch_to_mode
+
+      # Switch to home page
+      - logger.log: "Switching to Home Page"
+      - lvgl.page.show: home_page
+      - delay: 500ms
+
+      # Pause LVGL
+      - lvgl.pause:
 
   - id: update_home_translations
     then:
@@ -1653,7 +1701,7 @@ script:
 
           uint16_t old_selection = lv_roller_get_selected(roller_obj);
 
-          std::string options = 
+          std::string options =
             id(i18n_translations).translate("sleep_time.never") + "\n" +
             id(i18n_translations).translate("sleep_time.minute1") + "\n" +
             id(i18n_translations).translate("sleep_time.minute5") + "\n" +
@@ -1758,7 +1806,7 @@ script:
   - id: log_widgets_status
     then:
       - lambda: |-
-          // Создаем список пар: указатель на виджет и его имя
+          // Create a list of pairs: widget pointer and its name
           auto widget_list = {
               std::make_pair(id(main_widget_background), "main_widget_background"),
               std::make_pair(id(weather_time_widget), "weather_time_widget"),
@@ -1782,7 +1830,7 @@ script:
                   bool is_hidden = lv_obj_has_flag(widget, LV_OBJ_FLAG_HIDDEN);
                   lv_style_value_t val = lv_obj_get_style_prop(widget, LV_PART_MAIN, LV_STYLE_OPA);
                   lv_opa_t opa_value = val.num;
-              } 
+              }
           }
 
 
@@ -1797,7 +1845,7 @@ script:
           id: time_value
           text: !lambda |-
             static char time_buf[16];
-            auto now = id(sntp_time).now();            
+            auto now = id(sntp_time).now();
             snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
             return time_buf;
 
@@ -1805,20 +1853,20 @@ script:
           id: day_of_week_value
           text: !lambda |-
             auto now = id(sntp_time).now();
-            const char* day_keys[] = {"day_of_week.sunday", "day_of_week.monday", "day_of_week.tuesday", "day_of_week.wednesday", 
+            const char* day_keys[] = {"day_of_week.sunday", "day_of_week.monday", "day_of_week.tuesday", "day_of_week.wednesday",
                                       "day_of_week.thursday", "day_of_week.friday", "day_of_week.saturday"};
             const char* day_key = day_keys[now.day_of_week - 1];
-            
+
             return id(i18n_translations).translate(day_key);
 
       - lvgl.label.update:
           id: date_month_value
           text: !lambda |-
             auto now = id(sntp_time).now();
-            const char* month_keys[] = {"month.january", "month.february", "month.march", "month.april", "month.may", "month.june", 
+            const char* month_keys[] = {"month.january", "month.february", "month.march", "month.april", "month.may", "month.june",
                                         "month.july", "month.august", "month.september", "month.october", "month.november", "month.december"};
             const char* month_key = month_keys[now.month - 1];
-            
+
             static char buf[64];
             snprintf(buf, sizeof(buf), "%02d %s", now.day_of_month, id(i18n_translations).translate(month_key).c_str());
             return buf;
@@ -1827,72 +1875,72 @@ script:
 ####### FORECASTS ########
 
   # ========================================
-  # 1️⃣ PARSE DAILY FORECASTS (БЕЗ ИЗМЕНЕНИЙ)
+  # 1️⃣ PARSE DAILY FORECASTS (WITHOUT CHANGES)
   # ========================================
   - id: parse_daily_forecasts
     then:
       - lambda: |-
-          
+
           std::string json_str = id(weather_forecast_daily_sensor).state;
-          
+
           if (json_str.empty() || json_str == "unknown") {
             ESP_LOGW("weather", "No daily forecast data");
             id(forecast_daily_count) = 0;
             return;
           }
-          
+
           JsonDocument doc;
           DeserializationError error = deserializeJson(doc, json_str);
-          
+
           if (error) {
             ESP_LOGE("weather", "Parse error: %s", error.c_str());
             id(forecast_daily_count) = 0;
             return;
           }
-          
+
           JsonArray forecasts = doc.as<JsonArray>();
           if (forecasts.isNull()) {
             ESP_LOGE("weather", "Not an array!");
             id(forecast_daily_count) = 0;
             return;
           }
-          
+
           int count = std::min((int)forecasts.size(), 6);
           id(forecast_daily_count) = count;
-          
-          // Вычисляем offset ОДИН РАЗ
+
+          // Calculate offset ONCE
           auto local_now = id(sntp_time).now();
           auto utc_now = id(sntp_time).utcnow();
-          
+
           int32_t offset_hours = local_now.hour - utc_now.hour;
           if (offset_hours > 12) offset_hours -= 24;
           if (offset_hours < -12) offset_hours += 24;
-          
-          int32_t tz_offset = offset_hours * 3600 + 
-                            (local_now.minute - utc_now.minute) * 60 + 
+
+          int32_t tz_offset = offset_hours * 3600 +
+                            (local_now.minute - utc_now.minute) * 60 +
                             (local_now.second - utc_now.second);
-          
-          
+
+
           for (int i = 0; i < count; i++) {
             JsonObject forecast = forecasts[i];
             const char* dt_str = forecast["datetime"];
-            
+
             if (dt_str) {
-              
+
               struct tm tm = {};
               if (strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &tm)) {
-                // mktime() интерпретирует как ЛОКАЛЬНОЕ время (MSK)
+                // mktime() interprets as LOCAL time (MSK)
                 time_t local_ts = mktime(&tm);
-                
-                // ✅ ПРИБАВЛЯЕМ offset, чтобы получить правильный UTC timestamp
+
+                // ✅ ADD offset to get the correct UTC timestamp
                 time_t utc_timestamp = local_ts + tz_offset;
-                
+
                 id(forecast_daily_timestamps)[i] = utc_timestamp;
-                
-                // Проверка: конвертируем обратно
+
+                // Check: convert back
                 struct tm check_utc;
                 gmtime_r(&utc_timestamp, &check_utc);
-                
+
                 time_t local_display = utc_timestamp + tz_offset;
                 struct tm check_local;
                 gmtime_r(&local_display, &check_local);
@@ -1905,82 +1953,82 @@ script:
               ESP_LOGW("parse_debug", "⚠️ No datetime for forecast %d", i);
               id(forecast_daily_timestamps)[i] = 0;
             }
-            
+
             id(forecast_daily_temps)[i] = forecast["temperature"] | 0.0f;
             id(forecast_daily_conditions)[i] = forecast["condition"] | "sunny";
-            
+
           }
-          
+
       - script.execute: update_daily_display
 
 
 
   # ========================================
-  # 2️⃣ PARSE HOURLY FORECASTS (ИСПРАВЛЕН)
+  # 2️⃣ PARSE HOURLY FORECASTS (FIXED)
   # ========================================
   - id: parse_hourly_forecasts
     then:
       - lambda: |-
           std::string json_str = id(weather_forecast_hourly_sensor).state;
-          
+
           if (json_str.empty() || json_str == "unknown") {
             ESP_LOGW("weather", "No hourly forecast data");
             id(forecast_hourly_count) = 0;
             return;
           }
-          
+
           JsonDocument doc;
           DeserializationError error = deserializeJson(doc, json_str);
-          
+
           if (error) {
             ESP_LOGE("weather", "Parse error: %s", error.c_str());
             id(forecast_hourly_count) = 0;
             return;
           }
-          
+
           JsonArray forecasts = doc.as<JsonArray>();
           if (forecasts.isNull()) {
             ESP_LOGE("weather", "Not an array!");
             id(forecast_hourly_count) = 0;
             return;
           }
-          
+
           int count = forecasts.size();
           id(forecast_hourly_count) = count;
-          
-          // Вычисляем offset ОДИН РАЗ
+
+          // Calculate offset ONCE
           auto local_now = id(sntp_time).now();
           auto utc_now = id(sntp_time).utcnow();
-          
+
           int32_t offset_hours = local_now.hour - utc_now.hour;
           if (offset_hours > 12) offset_hours -= 24;
           if (offset_hours < -12) offset_hours += 24;
-          
-          int32_t tz_offset = offset_hours * 3600 + 
-                            (local_now.minute - utc_now.minute) * 60 + 
+
+          int32_t tz_offset = offset_hours * 3600 +
+                            (local_now.minute - utc_now.minute) * 60 +
                             (local_now.second - utc_now.second);
-          
+
           for (int i = 0; i < count; i++) {
             JsonObject forecast = forecasts[i];
             const char* dt_str = forecast["datetime"];
-            
+
             if (dt_str) {
-              
+
               struct tm tm = {};
               if (strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &tm)) {
-                // mktime() интерпретирует как ЛОКАЛЬНОЕ время (MSK)
+                // mktime() interprets as LOCAL time (MSK)
                 time_t local_ts = mktime(&tm);
-                
-                // ✅ ПРИБАВЛЯЕМ offset, чтобы получить правильный UTC timestamp
-                // Потому что строка содержала UTC время, а mktime подумал что это MSK
+
+                // ✅ ADD offset to get the correct UTC timestamp
+                // Because the string contained UTC time, but mktime thought it was MSK
                 time_t utc_timestamp = local_ts + tz_offset;
-                
+
                 id(forecast_hourly_timestamps)[i] = utc_timestamp;
-                
-                // Проверка: конвертируем обратно
+
+                // Check: convert back
                 struct tm check_utc;
                 gmtime_r(&utc_timestamp, &check_utc);
-                
+
                 time_t local_display = utc_timestamp + tz_offset;
                 struct tm check_local;
                 gmtime_r(&local_display, &check_local);
@@ -1993,12 +2041,12 @@ script:
               ESP_LOGW("parse_debug", "⚠️ No datetime for forecast %d", i);
               id(forecast_hourly_timestamps)[i] = 0;
             }
-            
+
             id(forecast_hourly_temps)[i] = forecast["temperature"] | 0.0f;
             id(forecast_hourly_conditions)[i] = forecast["condition"] | "sunny";
-            
+
           }
-               
+
       - script.execute: update_hourly_display
 
 
@@ -2006,18 +2054,18 @@ script:
 
 
   # ========================================
-  # 3️⃣ UPDATE DAILY DISPLAY (ИСПРАВЛЕН)
+  # 3️⃣ UPDATE DAILY DISPLAY (FIXED)
   # ========================================
   - id: update_daily_display
     then:
       - lambda: |-
           if (id(forecast_daily_count) == 0) return;
           if (!id(weather_forecast_daily)) return;
-          
+
           static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
-          
+
           lv_obj_clean(id(weather_forecast_daily));
-          
+
           auto get_icon = [](const std::string& c) -> esphome::image::Image* {
             if (c == "clear-night") return id(clear_night_small_img);
             if (c == "cloudy") return id(cloudy_small_img);
@@ -2035,28 +2083,28 @@ script:
             if (c == "windy-variant") return id(windy_variant_small_img);
             return id(sunny_small_img);
           };
-          
+
           auto get_day_name = [](int index) -> const char* {
             auto time_now = id(sntp_time).now();
             int today_wday = time_now.day_of_week;
             int forecast_wday = (today_wday + index - 1) % 7 + 1;
-            
+
             const char* day_keys[] = {
               "", "day_of_week_short.sunday", "day_of_week_short.monday",
               "day_of_week_short.tuesday", "day_of_week_short.wednesday",
               "day_of_week_short.thursday", "day_of_week_short.friday",
               "day_of_week_short.saturday"
             };
-            
+
             if (forecast_wday < 1 || forecast_wday > 7) return "???";
             static std::string result;
             result = id(i18n_translations).translate(day_keys[forecast_wday]);
             return result.c_str();
           };
-          
+
           lv_obj_t* cont = lv_obj_create(id(weather_forecast_daily));
           if (!cont) return;
-          
+
           lv_obj_set_size(cont, 408, 150);
           lv_obj_align(cont, LV_ALIGN_CENTER, 0, 5);
           lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
@@ -2064,17 +2112,17 @@ script:
           lv_obj_set_style_pad_all(cont, 0, 0);
           lv_obj_set_style_pad_column(cont, 0, 0);
           lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
-          
+
           for (int i = 0; i < id(forecast_daily_count); i++) {
             lv_obj_t* item = lv_obj_create(cont);
             if (!item) continue;
-            
+
             lv_obj_set_size(item, 68, 120);
             lv_obj_set_style_bg_opa(item, LV_OPA_TRANSP, 0);
             lv_obj_set_style_border_width(item, 0, 0);
             lv_obj_set_style_pad_all(item, 0, 0);
-            
-            // День недели
+
+            // Day of the week
             lv_obj_t* day_label = lv_label_create(item);
             if (day_label) {
               lv_label_set_text(day_label, get_day_name(i));
@@ -2082,15 +2130,15 @@ script:
               lv_obj_set_style_text_font(day_label, fe_nunito_16.get_lv_font(), 0);
               lv_obj_set_style_text_color(day_label, lv_color_hex(0x9BA2BC), 0);
             }
-            
-            // Иконка
+
+            // Icon
             lv_obj_t* icon = lv_img_create(item);
             if (icon) {
               lv_img_set_src(icon, get_icon(id(forecast_daily_conditions)[i]));
               lv_obj_align(icon, LV_ALIGN_CENTER, 0, 0);
             }
-            
-            // Температура
+
+            // Temperature
             lv_obj_t* temp_label = lv_label_create(item);
             if (temp_label) {
               char temp_str[10];
@@ -2101,21 +2149,21 @@ script:
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
-          
+
 
   # ========================================
-  # 4️⃣ UPDATE HOURLY DISPLAY (ИСПРАВЛЕН)
+  # 4️⃣ UPDATE HOURLY DISPLAY (FIXED)
   # ========================================
   - id: update_hourly_display
     then:
       - lambda: |-
           if (id(forecast_hourly_count) == 0) return;
           if (!id(weather_forecast_hourly)) return;
-          
+
           static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
-          
+
           lv_obj_clean(id(weather_forecast_hourly));
-          
+
           auto get_icon = [](const std::string& c) -> esphome::image::Image* {
             if (c == "clear-night") return id(clear_night_small_img);
             if (c == "cloudy") return id(cloudy_small_img);
@@ -2133,63 +2181,63 @@ script:
             if (c == "windy-variant") return id(windy_variant_small_img);
             return id(sunny_small_img);
           };
-          
-          // ✅ ПРАВИЛЬНАЯ КОНВЕРТАЦИЯ UTC → LOCAL
+
+          // ✅ CORRECT CONVERSION UTC → LOCAL
           auto get_time_str = [](time_t utc_timestamp) -> std::string {
             if (utc_timestamp == 0) return "--:--";
-            
-            // Получаем offset
+
+            // Get offset
             auto local_now = id(sntp_time).now();
             auto utc_now = id(sntp_time).utcnow();
-            
+
             int32_t offset_hours = local_now.hour - utc_now.hour;
             if (offset_hours > 12) offset_hours -= 24;
             if (offset_hours < -12) offset_hours += 24;
-            
-            int32_t tz_offset = offset_hours * 3600 + 
-                              (local_now.minute - utc_now.minute) * 60 + 
+
+            int32_t tz_offset = offset_hours * 3600 +
+                              (local_now.minute - utc_now.minute) * 60 +
                               (local_now.second - utc_now.second);
-            
-            // Применяем offset
+
+            // Apply offset
             time_t local_timestamp = utc_timestamp + tz_offset;
-            
-            // Конвертируем в структуру времени
+
+            // Convert to time structure
             struct tm local_tm;
             gmtime_r(&local_timestamp, &local_tm);
-            
+
             char buf[10];
             snprintf(buf, sizeof(buf), "%02d:%02d", local_tm.tm_hour, local_tm.tm_min);
             return std::string(buf);
           };
 
-          // Создаем scrollable контейнер
+          // Create scrollable container
           lv_obj_t* cont = lv_obj_create(id(weather_forecast_hourly));
           if (!cont) return;
-          
+
           lv_obj_set_size(cont, LV_SIZE_CONTENT, 150);
           lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
           lv_obj_set_style_border_width(cont, 0, 0);
           lv_obj_set_style_pad_all(cont, 0, 0);
           lv_obj_set_style_pad_column(cont, 0, 0);
-          
+
           lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
-          
+
           lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_AUTO);
           lv_obj_set_scroll_dir(cont, LV_DIR_HOR);
 
-          
+
           for (int i = 0; i < id(forecast_hourly_count); i++) {
             lv_obj_t* item = lv_obj_create(cont);
             if (!item) continue;
-            
+
             lv_obj_set_size(item, 68, 120);
             lv_obj_set_style_bg_opa(item, LV_OPA_TRANSP, 0);
             lv_obj_set_style_border_width(item, 0, 0);
             lv_obj_set_style_pad_all(item, 2, 0);
-            
+
             lv_obj_clear_flag(item, LV_OBJ_FLAG_SCROLLABLE);
-            
-            // Время
+
+            // Time
             lv_obj_t* time_label = lv_label_create(item);
             if (time_label) {
               std::string time_str = get_time_str(id(forecast_hourly_timestamps)[i]);
@@ -2198,15 +2246,15 @@ script:
               lv_obj_set_style_text_font(time_label, fe_nunito_16.get_lv_font(), 0);
               lv_obj_set_style_text_color(time_label, lv_color_hex(0x9BA2BC), 0);
             }
-            
-            // Иконка
+
+            // Icon
             lv_obj_t* icon = lv_img_create(item);
             if (icon) {
               lv_img_set_src(icon, get_icon(id(forecast_hourly_conditions)[i]));
               lv_obj_align(icon, LV_ALIGN_CENTER, 0, 0);
             }
-            
-            // Температура
+
+            // Temperature
             lv_obj_t* temp_label = lv_label_create(item);
             if (temp_label) {
               char temp_str[10];
@@ -2217,4 +2265,3 @@ script:
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
-          

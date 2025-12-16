@@ -1,0 +1,472 @@
+lvgl:
+  pages:
+    # Nueva página para mostrar texto
+    - id: texto_page
+      <<: !include
+        file: ../../widgets/swipe_navigation.yaml
+      on_load:
+        - lvgl.label.update:
+            id: texto_label
+            text: !lambda 'return id(texto1_ha).state.c_str();'
+        - lambda: |-
+            id(active_lvgl_page) = "texto_page";
+        - script.execute: cycle_texto_page_climates
+
+      widgets:
+        # Botón para volver a main_page
+        - button:
+            id: back_button
+            x: 100
+            y: 10
+            align: TOP_LEFT
+            width: 160
+            height: 40
+            widgets:
+              - label:
+                  text: "CONFIRM"
+                  align: CENTER
+                  text_font: nunito_18
+            on_press:
+              - script.stop: cycle_texto_page_climates
+            #  - lvgl.widget.hide: preset_dropdown_menu
+              - script.execute: clear_texto_and_return
+            #  - script.execute: play_beep
+
+        # Contenedor para el texto con scroll
+        - obj:
+            id: texto_container
+            x: 10
+            y: 60
+            width: 460
+            height: 90  # El alto es limitado, permitiendo que el texto largo se desborde
+            bg_color: color_dark_gray
+            border_width: 2
+            border_color: color_mint
+            radius: 10
+            pad_all: 15
+            scrollbar_mode: AUTO # ¡Esto habilita la barra de desplazamiento si el contenido es más grande!
+            widgets:
+              - label:
+                  id: texto_label
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text: "Esperando texto..."
+                  text_font: nunito_30
+                  text_color: color_white
+                  long_mode: SCROLL # ¡Esto hace que el texto se envuelva dentro del ancho del contenedor!
+                  width: 440
+
+        # Información de datos multiples
+        - obj:
+            align: BOTTOM_MID
+            y: -10
+            width: 90%
+            height: 100
+            bg_color: color_dark_gray
+            border_width: 1
+            border_color: color_gray
+            radius: 10
+            widgets:
+              - label:
+                  id: texto_page_climate_label
+                  align: TOP_LEFT
+                  y: 0
+                  text: "SALON"
+                  text_font: nunito_20
+                  text_color: color_mint
+              - label:
+                  id: texto_page_window_label
+                  align: TOP_MID
+                  y: 0
+                  text: ""
+                  text_font: mdi_icons_24
+                  text_color: color_gray
+              - label:
+                  id: texto_page_heat_label
+                  align: TOP_MID
+                  x: 30
+                  y: 0
+                  text: ""
+                  text_font: mdi_icons_24
+                  text_color: color_red
+              - label:
+                  id: texto_page_temp_label
+                  align: CENTER
+                  y: 20
+                  text: "22.5°C"
+                  text_font: nunito_18
+                  text_color: color_violet
+
+              # Progress bar - esquina inferior izquierda
+              - obj:
+                  id: countdown_bar_main_container
+                  hidden: true
+                  align: TOP_LEFT
+                  # x: 10
+                  y: 30
+                  width: 60
+                  height: 8
+                  bg_opa: 0%
+                  radius: 4
+                  widgets:
+                    - bar:
+                        id: countdown_text_progress_bar
+                        width: 60
+                        height: 6
+                        align: CENTER
+                        min_value: 0
+                        max_value: 100
+                        value: 100  # Start at 100 for decreasing
+                        bg_color: 0x333333  # Dark gray background (empty part)
+                        bg_opa: COVER  # Full opacity for background
+                        indicator:
+                          bg_color: 0x00FF00  # Green fill (progress line)
+                          bg_opa: COVER  # Full opacity for fill
+                        border_width: 0  # No border for cleaner look
+                        radius: 3
+                        anim_time: 0s
+
+binary_sensor:
+  - platform: homeassistant
+    entity_id: switch.zbswitch13_acs
+    id: acs_on
+    internal: true
+
+  - platform: homeassistant
+    entity_id: binary_sensor.acs
+    id: acs_heating
+    internal: true
+
+  - platform: homeassistant
+    entity_id: input_boolean.living_room_windows
+    id: salon_windows
+    internal: true
+
+  - platform: homeassistant
+    entity_id: binary_sensor.maindoor_contact
+    id: maindoor_status
+    internal: true
+
+  - platform: homeassistant
+    entity_id: binary_sensor.maindormwnd_contact
+    id: maindorm_window
+    internal: true
+
+  - platform: homeassistant
+    entity_id: binary_sensor.bathroomwnd_contact
+    id: bathroom_window
+    internal: true
+
+sensor:
+  - platform: homeassistant
+    entity_id: weather.forecast_home
+    attribute: temperature
+    id: weather_temperature
+    internal: true
+
+  - platform: homeassistant
+    entity_id: sensor.atc_f7ba_temperature
+    id: gt_temp
+    internal: true
+
+  - platform: homeassistant
+    entity_id: sensor.atc_1e0a_temperature
+    id: bt_temp
+    internal: true
+
+  - platform: homeassistant
+    entity_id: sensor.radoneye_salon_radon
+    id: radon1
+    internal: true
+
+text_sensor:
+  # Template sensor para enviar comando de limpieza a HA
+  - platform: template
+    name: "Clear Texto Command"
+    id: clear_texto_command
+    # Esto publicará a HA y activará una automatización
+
+# Importar el sensor de texto desde Home Assistant
+  - platform: homeassistant
+    id: texto1_ha
+    entity_id: input_text.mi_texto1
+    internal: true
+    on_value:
+      then:
+        # Cambiar a la página de texto solo si las condiciones se cumplen
+        - if:
+            condition:
+              lambda: |-
+                // Verificar que el sistema esté listo
+                // if (!id(system_ready)) return false;
+
+                auto state = id(texto1_ha).state;
+                return (!state.empty() &&
+                        state != "none" &&
+                        state != "unknown" &&
+                        state != "unavailable"); // &&
+                        //!id(idle_mode_active) &&
+                        //!id(boot_screen_visible));
+            then:
+              - lvgl.page.show: texto_page
+              - lvgl.label.update:
+                  id: texto_label
+                  text: !lambda 'return id(texto1_ha).state.c_str();'
+              - lambda: |-
+                  id(active_lvgl_page) = "texto_page";
+              - script.execute: cycle_texto_page_climates
+
+globals:
+  - id: texto_page_climate_index
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+  - id: countdown_progress
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+script:
+  # Script para limpiar texto y volver a main_page
+  - id: clear_texto_and_return
+    then:
+      - lambda: |-
+          //id(clearing_texto) = true;
+          // Publicar comando que HA escuchará
+          id(clear_texto_command).publish_state("clear_requested");
+          ESP_LOGD("clear_texto", "Comando de limpieza enviado a HA");
+      - delay: 500ms
+      - text_sensor.template.publish:
+          id: clear_texto_command
+          state: clearing
+      - lvgl.page.show: home_page
+      - delay: 500ms
+      - text_sensor.template.publish:
+          id: clear_texto_command
+          state: acknowledged
+      - lambda: ESP_LOGI("clear_texto", "Limpieza completada y reconocida");
+
+  # Script para ciclar climates en texto_page
+  - id: cycle_texto_page_climates
+    mode: restart
+    then:
+      - logger.log: "Starting cycle_texto_page_climates"
+
+      # === CRITICAL FIX: Reset countdown_progress FIRST ===
+      - lambda: |-
+          id(countdown_progress) = 0;
+          ESP_LOGI("cycle_texto_page_climates", "Reset countdown_progress to: %d", id(countdown_progress));
+
+      # 1. Prepare UI
+      - lvgl.widget.show: countdown_bar_main_container
+
+      # 2. Reset Progress Bar to 100% (DECREASING START)
+      - lambda: |-
+          // Start at 100% full
+          lv_bar_set_value(id(countdown_text_progress_bar), 100, LV_ANIM_OFF);
+
+      - while:
+          condition:
+            # Both conditions must be true (AND logic)
+            - lambda: 'return id(active_lvgl_page) == "texto_page";'
+            - light.is_on: display_backlight
+          then:
+            - lambda: |-
+                ESP_LOGI("cycle_texto_page_climates", "countdown_progress: %d", id(countdown_progress));
+                // Arrays con la información de los climates
+                static const char* climate_labels[] = {"SALON", "BATHR.", "BEDROOM", "PASILLO", "ACS", "OTHER"};
+                static const char* window_icons[] = {"\U000F11DB", "\U000F11DC"};
+                static const char* heating_icons[] = {"\U000F1722", "\U000F0238"};
+                static const char* square_icons[] = {"\U000F0763", "\U000F0764"};
+
+                int idx = id(texto_page_climate_index);
+                ESP_LOGI("cycle_texto_page_climates", "idx: %d", idx);
+
+                float current_temp = NAN;
+                float set_temp = NAN;
+                std::string hvac_action;
+                bool window_state;
+                //bool heat_state;
+
+                // Obtener datos según el índice actual
+                switch(idx) {
+                  case 0: // Salon
+                    current_temp = id(thermostat_sensor_current_temp_1).state;
+                    set_temp = id(thermostat_sensor_target_temp_1).state;
+                    hvac_action = id(thermostat_sensor_hvac_action_1).state;
+                    window_state = id(salon_windows).state;
+                    //heat_state = id(salon_climate_switch).state;
+                    break;
+                  case 1: // Bathroom
+                    current_temp = id(thermostat_sensor_current_temp_2).state;
+                    set_temp = id(thermostat_sensor_target_temp_2).state;
+                    hvac_action = id(thermostat_sensor_hvac_action_2).state;
+                    window_state = id(bathroom_window).state;
+                    //heat_state = id(bathroom_switch).state;
+                    break;
+                  case 2: // Bedroom
+                    current_temp = id(thermostat_sensor_current_temp_3).state;
+                    set_temp = id(thermostat_sensor_target_temp_3).state;
+                    hvac_action = id(thermostat_sensor_hvac_action_3).state;
+                    window_state = id(maindorm_window).state;
+                    //heat_state = id(bedroom_switch).state;
+                    break;
+                  case 3: // Pasillo
+                    current_temp = id(thermostat_sensor_current_temp_4).state;
+                    set_temp = id(thermostat_sensor_target_temp_4).state;
+                    hvac_action = id(thermostat_sensor_hvac_action_4).state;
+                    window_state = id(maindoor_status).state;
+                    //heat_state = id(pasillo_switch).state;
+                    break;
+                  case 4: // ACS
+                    window_state = id(acs_on).state;
+                    break;
+                }
+
+                // Actualizar el label del nombre del climate
+                lv_label_set_text(id(texto_page_climate_label), climate_labels[idx]);
+
+                float radon_level = id(radon1).state;
+
+                if (idx < 4) {
+                  // Actualizar el label de ventana abierta/cerrada
+                  int current_icon = 0;
+                  if (window_state) {
+                    lv_obj_set_style_text_color(id(texto_page_window_label), lv_color_hex(0xFF6B35), 0);
+                    current_icon = 1;
+                  } else {
+                    lv_obj_set_style_text_color(id(texto_page_window_label), lv_color_hex(0x9E9E9E), 0);
+                  }
+                  ESP_LOGI("window_icons", "current_icon: %d", current_icon);
+                  lv_label_set_text(id(texto_page_window_label), window_icons[current_icon]);
+
+                  // Actualizar el label de heating on/off
+                  current_icon = 0;
+
+                  // cambiar color según estado
+                  if (hvac_action == "heating") {
+                    current_icon = 1;
+                  }
+
+                  ESP_LOGI("heating_icons", "current_icon: %d", current_icon);
+                  lv_label_set_text(id(texto_page_heat_label), heating_icons[current_icon]);
+
+                  // cambiar color según estado
+                  if (hvac_action == "heating") {
+                    lv_obj_set_style_text_color(id(texto_page_heat_label), lv_color_hex(0xFF0000), 0);
+                  } else if (hvac_action == "idle") {
+                    lv_obj_set_style_text_color(id(texto_page_heat_label), lv_color_hex(0xFFFFFF), 0);
+                  } else {
+                    lv_obj_set_style_text_color(id(texto_page_heat_label), lv_color_hex(0x9E9E9E), 0);
+                  }
+
+                  // Actualizar el label de temperatura
+                  if (!isnan(current_temp) && !isnan(set_temp)) {
+                    char buf[30];
+                    snprintf(buf, sizeof(buf), "%.1f°C - %.1f°C", current_temp, set_temp);
+                    lv_label_set_text(id(texto_page_temp_label), buf);
+
+                    // Opcional: cambiar color según estado
+                    if (hvac_action == "heating") {
+                      lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0xFF0000), 0);
+                    } else if (hvac_action == "idle") {
+                      lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0xFFFFFF), 0);
+                    } else {
+                      lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0x9E9E9E), 0);
+                    }
+                  } else {
+                    lv_label_set_text(id(texto_page_temp_label), "");
+                  }
+                } else if (idx == 4) {
+                  // Actualizar el label de ventana abierta/cerrada
+                  int current_icon = 0;
+                  if (window_state) {
+                    lv_obj_set_style_text_color(id(texto_page_window_label), lv_color_hex(0xFF6B35), 0);
+                    current_icon = 1;
+                  } else {
+                    lv_obj_set_style_text_color(id(texto_page_window_label), lv_color_hex(0x9E9E9E), 0);
+                  }
+
+                  lv_label_set_text(id(texto_page_window_label), square_icons[current_icon]);
+
+                  // Actualizar el label de heating on/off
+                  current_icon = 0;
+
+                  if (id(acs_heating).state)
+                    current_icon = 1;
+                  ESP_LOGI("heating_icons", "current_icon: %d", current_icon);
+                  lv_label_set_text(id(texto_page_heat_label), heating_icons[current_icon]);
+
+                  // Opcional: cambiar color según estado
+                  if (id(acs_heating).state) {
+                    lv_obj_set_style_text_color(id(texto_page_heat_label), lv_color_hex(0xFF0000), 0);
+                    current_icon = 1;
+                  } else {
+                    lv_obj_set_style_text_color(id(texto_page_heat_label), lv_color_hex(0xFFFFFF), 0);
+                  }
+
+                  if (radon_level > 150) {
+                    lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0xFF0000), 0);
+                  } else {
+                    lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0x9E9E9E), 0);
+                  }
+                  char buf[35];
+                  snprintf(buf, sizeof(buf), "Petin: %.1f°C Radon: %.1f Bq/m3", id(weather_temperature_sensor).state, radon_level);
+                  lv_label_set_text(id(texto_page_temp_label), buf);
+                } else if (idx == 5) {
+                  lv_label_set_text(id(texto_page_window_label), "");
+                  lv_label_set_text(id(texto_page_heat_label), "");
+
+                  char buf[35];
+                  snprintf(buf, sizeof(buf), "Bajo Techo: %.1f°C Galeria: %.1f°C", id(bt_temp).state, id(gt_temp).state);
+                  lv_label_set_text(id(texto_page_temp_label), buf);
+                  lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0x9E9E9E), 0);
+                }
+
+                // Avanzar al siguiente climate
+                id(texto_page_climate_index) = (idx + 1) % 6;
+
+            # 3. The Wait Loop (5 steps)
+            - while:
+                condition:
+                  lambda: |-
+                    return id(countdown_progress) < 5 &&
+                           id(active_lvgl_page) == "texto_page"; // &&
+                           // !id(cycle_paused);
+                then:
+                  - delay: 1s
+                  # A. Calculate delay for this step (Total / 5)
+                  #- delay: !lambda |-
+                  #    uint32_t current_time = millis();
+                  #    uint32_t time_since_press = current_time - id(last_user_interaction_time);
+                  #    int total_duration = 5000; // Default 5 seconds
+                  #    if (time_since_press < 30000 && id(last_user_interaction_time) > 0) {
+                  #      total_duration = 30000; // Recent interaction: 30 seconds
+                  #    }
+                  #    // Return time per step (Total / 5)
+                  #    return total_duration / 5;
+
+                  # B. Increment Progress and Update Bar Visuals (DECREASING LOGIC)
+                  - lambda: |-
+                      // Safety check
+                      if (id(countdown_progress) > 100 || id(countdown_progress) < 0) {
+                        ESP_LOGW("cycle_texto_page_climates", "Invalid countdown_progress: %d, resetting to 0", id(countdown_progress));
+                        id(countdown_progress) = 0;
+                      }
+
+                      ESP_LOGI("cycle_texto_page_climates", "countdown_progress before increment: %d", id(countdown_progress));
+                      id(countdown_progress)++;
+
+                      // Calculate percentage (100% -> 0%)
+                      int pct = 100 - ((id(countdown_progress) * 100) / 5);
+                      ESP_LOGI("cycle_texto_page_climates", "Setting bar to: %d%%", pct);
+                      lv_bar_set_value(id(countdown_text_progress_bar), pct, LV_ANIM_OFF);
+
+            # Reset for next cycle
+            - lambda: |-
+                ESP_LOGI("cycle_texto_page_climates", "Resetting countdown_progress from %d to 0", id(countdown_progress));
+                id(countdown_progress) = 0;
+            # - delay: 5s  # Esperar 5 segundos antes de mostrar el siguiente
+      - logger.log: "cycle_texto_page_climates Stopped"

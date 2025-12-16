@@ -101,3 +101,27 @@ cover:
     open: Abierto
     opening: Abriendo
     stopped: Detenido
+
+alarm_panel:
+  name: "Panel de control de alarma"
+  enter_pass: "Ingrese la contraseña"
+  wrong_pass: "Contraseña incorrecta"
+  state:
+    armed: Armada
+    armed_away: Armada ausente
+    armed_custom_bypass: Armada personalizada
+    armed_home: Armada en casa
+    armed_night: Armada noche
+    armed_vacation: Armada de vacaciones
+    arming: Armando
+    disarmed: Desarmada
+    disarming: Desarmando
+    pending: Pendiente
+    triggered: Disparada
+
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"
