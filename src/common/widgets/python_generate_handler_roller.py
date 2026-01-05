@@ -32,4 +32,4 @@ with open('devices_list.yaml', 'w') as f:
 with open('devices_handler.yaml', 'w') as f:
     yaml.dump(handler, f, default_flow_style=False)
 
-print("Generated '~/bin/titov/common/widgets/devices_list.yaml' and '~/bin/titov/common/widgets/devices_handler.yaml' successfully!")
+print("Generated '~/bin/titov/gerardo_src/common/widgets/devices_list.yaml' and '~/bin/titov/gerardo_src/common/widgets/devices_handler.yaml' successfully!")

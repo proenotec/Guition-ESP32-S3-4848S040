@@ -1261,7 +1261,7 @@ lvgl:
                                 - label:
                                     id: fan_direction_btn_icon
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${rotate_left_icon}"
 
@@ -1319,7 +1319,7 @@ lvgl:
                                 - label:
                                     id: fan_oscillating_btn_icon
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${swing_off_icon}"
 

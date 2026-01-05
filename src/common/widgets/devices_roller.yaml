@@ -14,27 +14,23 @@ lvgl:
             text_font: nunito_20
             text_color: color_misty_blue
 
-        # Button matrix selector (auto-generated from config)
-        - buttonmatrix:
-            id: widget_buttons
+        # The roller: Full-width selector for widgets
+        - roller:
+            id: widget_roller
             x: 20
             y: 80
             width: 440
-            height: 310
+            height: 360
             align: top_left
+            options: !include devices_list.yaml
+            selected_index: 0
+            # Styling
             bg_color: color_steel_blue
             border_color: color_misty_blue
-            border_width: 4
-            outline_width: 0
-            pad_all: 4
-            rows: !include devices_list.yaml
-            items:
-              bg_color: color_steel_blue
-              text_font: nunito_20
-              text_color: color_misty_blue
-              pressed:
-                bg_color: 0x4169E1
-            on_press: !include devices_handler.yaml
+            border_width: 2
+            text_font: nunito_36
+            # Event: On value change, navigate to the page
+            on_value: !include devices_handler.yaml
 
         # BACK button
         - obj:

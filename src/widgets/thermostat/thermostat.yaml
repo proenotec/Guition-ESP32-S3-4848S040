@@ -1220,107 +1220,37 @@ lvgl:
                           entity_id: !lambda 'return id(current_climate_entity);'
                           hvac_mode: "off"
 
-        # Presets container (buttons shown/hidden via script)
         - obj:
             id: thermostat_controls_presets
             x: 100
             y: 80
             width: 80
             height: 340
-            align: top_left
+            align: TOP_LEFT
             pad_all: 3
-            bg_opa: transp
-            border_opa: transp
+            bg_opa: TRANSP
+            border_opa: TRANSP
             border_width: 0
-            shadow_opa: transp
+            shadow_opa: TRANSP
             layout:
-              type: flex
-              flex_align_cross: center
-              flex_align_track: center
+              type: FLEX
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
             widgets:
-              # Eco button
-              - obj:
-                  id: thermostat_eco_preset_btn
-                  hidden: true
-                  width: 35
-                  height: 35
-                  pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
-                  widgets:
-                    - label:
-                        id: thermostat_eco_preset_label
-                        align: center
-                        text_font: mdi_icons_24
-                        text_color: color_misty_blue
-                        text: "${eco_preset_icon}"
-                  on_press:
-                    - homeassistant.action:
-                        action: climate.set_preset_mode
-                        data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
-                          preset_mode: eco
-              # Away button
-              - obj:
-                  id: thermostat_away_preset_btn
-                  hidden: true
-                  width: 35
-                  height: 35
-                  pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
-                  widgets:
-                    - label:
-                        id: thermostat_away_preset_label
-                        align: center
-                        text_font: mdi_icons_24
-                        text_color: color_misty_blue
-                        text: "${away_preset_icon}"
-                  on_press:
-                    - homeassistant.action:
-                        action: climate.set_preset_mode
-                        data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
-                          preset_mode: away
-              # Boost button
-              - obj:
-                  id: thermostat_boost_preset_btn
-                  hidden: true
-                  width: 35
-                  height: 35
-                  pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
-                  widgets:
-                    - label:
-                        id: thermostat_boost_preset_label
-                        align: center
-                        text_font: mdi_icons_24
-                        text_color: color_misty_blue
-                        text: "${boost_preset_icon}"
-                  on_press:
-                    - homeassistant.action:
-                        action: climate.set_preset_mode
-                        data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
-                          preset_mode: boost
-              # Comfort button
+              # 1. COMFORT (23°C) - Moved to first position
               - obj:
                   id: thermostat_comfort_preset_btn
                   hidden: true
                   width: 35
                   height: 35
                   pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
                   widgets:
                     - label:
                         id: thermostat_comfort_preset_label
-                        align: center
+                        align: CENTER
                         text_font: mdi_icons_24
                         text_color: color_misty_blue
                         text: "${comfort_preset_icon}"
@@ -1328,22 +1258,47 @@ lvgl:
                     - homeassistant.action:
                         action: climate.set_preset_mode
                         data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
+                          entity_id: !lambda return id(current_climate_entity);
                           preset_mode: comfort
-              # Home button
+
+              # 2. ECO (22°C)
+              - obj:
+                  id: thermostat_eco_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
+                  widgets:
+                    - label:
+                        id: thermostat_eco_preset_label
+                        align: CENTER
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${eco_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda return id(current_climate_entity);
+                          preset_mode: eco
+
+              # 3. HOME (21°C)
               - obj:
                   id: thermostat_home_preset_btn
                   hidden: true
                   width: 35
                   height: 35
                   pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
                   widgets:
                     - label:
                         id: thermostat_home_preset_label
-                        align: center
+                        align: CENTER
                         text_font: mdi_icons_24
                         text_color: color_misty_blue
                         text: "${home_preset_icon}"
@@ -1351,22 +1306,23 @@ lvgl:
                     - homeassistant.action:
                         action: climate.set_preset_mode
                         data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
+                          entity_id: !lambda return id(current_climate_entity);
                           preset_mode: home
-              # Sleep button
+
+              # 4. SLEEP (19°C)
               - obj:
                   id: thermostat_sleep_preset_btn
                   hidden: true
                   width: 35
                   height: 35
                   pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
                   widgets:
                     - label:
                         id: thermostat_sleep_preset_label
-                        align: center
+                        align: CENTER
                         text_font: mdi_icons_24
                         text_color: color_misty_blue
                         text: "${sleep_preset_icon}"
@@ -1374,22 +1330,23 @@ lvgl:
                     - homeassistant.action:
                         action: climate.set_preset_mode
                         data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
+                          entity_id: !lambda return id(current_climate_entity);
                           preset_mode: sleep
-              # Activity button
+
+              # 5. ACTIVITY (17°C)
               - obj:
                   id: thermostat_activity_preset_btn
                   hidden: true
                   width: 35
                   height: 35
                   pad_all: 0
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_opa: transp
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
                   widgets:
                     - label:
                         id: thermostat_activity_preset_label
-                        align: center
+                        align: CENTER
                         text_font: mdi_icons_24
                         text_color: color_misty_blue
                         text: "${activity_preset_icon}"
@@ -1397,8 +1354,236 @@ lvgl:
                     - homeassistant.action:
                         action: climate.set_preset_mode
                         data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
+                          entity_id: !lambda return id(current_climate_entity);
                           preset_mode: activity
+
+              # 6. AWAY (14°C) - Moved to last position
+              - obj:
+                  id: thermostat_away_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
+                  widgets:
+                    - label:
+                        id: thermostat_away_preset_label
+                        align: CENTER
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${away_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda return id(current_climate_entity);
+                          preset_mode: away
+
+              # 7. BOOST (if applicable)
+              - obj:
+                  id: thermostat_boost_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: TRANSP
+                  border_opa: TRANSP
+                  shadow_opa: TRANSP
+                  widgets:
+                    - label:
+                        id: thermostat_boost_preset_label
+                        align: CENTER
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${boost_preset_icon}"
+                  on_press:
+                    - homeassistant.action:
+                        action: climate.set_preset_mode
+                        data:
+                          entity_id: !lambda return id(current_climate_entity);
+                          preset_mode: boost
+
+#        # Presets container (buttons shown/hidden via script)
+#        - obj:
+#            id: thermostat_controls_presets
+#            x: 100
+#            y: 80
+#            width: 80
+#            height: 340
+#            align: top_left
+#            pad_all: 3
+#            bg_opa: transp
+#            border_opa: transp
+#            border_width: 0
+#            shadow_opa: transp
+#            layout:
+#              type: flex
+#              flex_align_cross: center
+#              flex_align_track: center
+#            widgets:
+#              # Eco button
+#              - obj:
+#                  id: thermostat_eco_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_eco_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${eco_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: eco
+#              # Away button
+#              - obj:
+#                  id: thermostat_away_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_away_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${away_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: away
+#              # Boost button
+#              - obj:
+#                  id: thermostat_boost_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_boost_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${boost_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: boost
+#              # Comfort button
+#              - obj:
+#                  id: thermostat_comfort_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_comfort_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${comfort_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: comfort
+#              # Home button
+#              - obj:
+#                  id: thermostat_home_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_home_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${home_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: home
+#              # Sleep button
+#              - obj:
+#                  id: thermostat_sleep_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_sleep_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${sleep_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: sleep
+#              # Activity button
+#              - obj:
+#                  id: thermostat_activity_preset_btn
+#                  hidden: true
+#                  width: 35
+#                  height: 35
+#                  pad_all: 0
+#                  bg_opa: transp
+#                  border_opa: transp
+#                  shadow_opa: transp
+#                  widgets:
+#                    - label:
+#                        id: thermostat_activity_preset_label
+#                        align: center
+#                        text_font: mdi_icons_24
+#                        text_color: color_misty_blue
+#                        text: "${activity_preset_icon}"
+#                  on_press:
+#                    - homeassistant.action:
+#                        action: climate.set_preset_mode
+#                        data:
+#                          entity_id: !lambda 'return id(current_climate_entity);'
+#                          preset_mode: activity
 
         # Main temperature widget (arcs, labels)
         - obj:

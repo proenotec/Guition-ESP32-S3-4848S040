@@ -284,7 +284,7 @@ lvgl:
                           - label:
                               id: ${widget_name}_state_icon
                               align: center
-                              text_font: mdi_icons_40
+                              text_font: icons_40
                               text_color: color_misty_blue
                               text: "${shield_arming_icon}"
 
@@ -519,7 +519,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${shield_home_icon}"
 
@@ -588,7 +588,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${shield_away_icon}"
 
@@ -657,7 +657,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${shield_night_icon}"
 
@@ -726,7 +726,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${shield_custom_icon}"
 
@@ -795,7 +795,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${shield_vacation_icon}"
 
@@ -890,7 +890,7 @@ lvgl:
                               id: ${widget_name}_disarmed_icon
                               align: CENTER
                               text_color: color_misty_blue
-                              text_font: mdi_icons_52
+                              text_font: icons_52
                               text: "${shield_disarmed_icon}"
                               on_press:
                                 - lambda: |-

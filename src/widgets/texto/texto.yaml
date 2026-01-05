@@ -1,3 +1,14 @@
+globals:
+  - id: texto_page_climate_index
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+  - id: countdown_progress
+    type: int
+    restore_value: false
+    initial_value: '0'
+
 lvgl:
   pages:
     # Nueva página para mostrar texto
@@ -6,11 +17,22 @@ lvgl:
         file: ../../widgets/swipe_navigation.yaml
       on_load:
         - lvgl.label.update:
-            id: texto_label
+            id: texto_label1
             text: !lambda 'return id(texto1_ha).state.c_str();'
+        - lvgl.label.update:
+            id: texto_label2
+            text: !lambda 'return id(texto1_thread).state.c_str();'
         - lambda: |-
             id(active_lvgl_page) = "texto_page";
-        - script.execute: cycle_texto_page_climates
+            // Primer climate
+            id(texto_page_climate_index) = 0;
+        # NEW: Check if we should start the cycle script
+        - if:
+            condition:
+              lambda: |-
+                return id(display_backlight)->remote_values.is_on();
+            then:
+              - script.execute: cycle_texto_page_climates
 
       widgets:
         # Botón para volver a main_page
@@ -32,9 +54,9 @@ lvgl:
               - script.execute: clear_texto_and_return
             #  - script.execute: play_beep
 
-        # Contenedor para el texto con scroll
+        # Contenedor para el texto #1 con scroll
         - obj:
-            id: texto_container
+            id: texto_container1
             x: 10
             y: 60
             width: 460
@@ -47,7 +69,7 @@ lvgl:
             scrollbar_mode: AUTO # ¡Esto habilita la barra de desplazamiento si el contenido es más grande!
             widgets:
               - label:
-                  id: texto_label
+                  id: texto_label1
                   align: TOP_LEFT
                   x: 0
                   y: 0
@@ -55,12 +77,37 @@ lvgl:
                   text_font: nunito_30
                   text_color: color_white
                   long_mode: SCROLL # ¡Esto hace que el texto se envuelva dentro del ancho del contenedor!
-                  width: 440
+                  width: 420
+
+        # Contenedor para el texto #2 con scroll
+        - obj:
+            id: texto_container2
+            x: 10
+            y: 160
+            width: 460
+            height: 90
+            bg_color: color_dark_gray
+            border_width: 2
+            border_color: color_mint
+            radius: 10
+            pad_all: 15
+            scrollbar_mode: AUTO
+            widgets:
+              - label:
+                  id: texto_label2
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text: "Esperando texto..."
+                  text_font: nunito_30
+                  text_color: color_white
+                  long_mode: SCROLL
+                  width: 420
 
         # Información de datos multiples
         - obj:
             align: BOTTOM_MID
-            y: -10
+            y: -60
             width: 90%
             height: 100
             bg_color: color_dark_gray
@@ -126,6 +173,33 @@ lvgl:
                         border_width: 0  # No border for cleaner look
                         radius: 3
                         anim_time: 0s
+
+        # BACK button
+        - obj:
+            y: 0
+            width: 80
+            height: 50
+            align: bottom_mid
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15
+            on_click:
+              - lvgl.page.show: home_page
 
 binary_sensor:
   - platform: homeassistant
@@ -211,24 +285,54 @@ text_sensor:
             then:
               - lvgl.page.show: texto_page
               - lvgl.label.update:
-                  id: texto_label
+                  id: texto_label1
                   text: !lambda 'return id(texto1_ha).state.c_str();'
               - lambda: |-
                   id(active_lvgl_page) = "texto_page";
               - script.execute: cycle_texto_page_climates
 
-globals:
-  - id: texto_page_climate_index
-    type: int
-    restore_value: false
-    initial_value: '0'
+  - platform: homeassistant
+    id: texto1_thread
+    entity_id: input_text.thread_text2
+    internal: true
+    on_value:
+      then:
+        # Cambiar a la página de texto solo si las condiciones se cumplen
+        - if:
+            condition:
+              lambda: |-
+                // Verificar que el sistema esté listo
+                // if (!id(system_ready)) return false;
 
-  - id: countdown_progress
-    type: int
-    restore_value: false
-    initial_value: '0'
+                auto state = id(texto1_ha).state;
+                return (!state.empty() &&
+                        state != "none" &&
+                        state != "unknown" &&
+                        state != "unavailable"); // &&
+                        //!id(idle_mode_active) &&
+                        //!id(boot_screen_visible));
+            then:
+              - lvgl.page.show: texto_page
+              - lvgl.label.update:
+                  id: texto_label2
+                  text: !lambda 'return id(texto1_thread).state.c_str();'
+              - lambda: |-
+                  id(active_lvgl_page) = "texto_page";
+              - script.execute: cycle_texto_page_climates
 
 script:
+  - id: check_and_start_cycle
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: |-
+              return id(active_lvgl_page) == "textopage" &&
+                     id(display_backlight)->remote_values.is_on() &&  // Changed from current_values
+                     !id(cycle_texto_page_climates).is_running();
+          then:
+            - script.execute: cycle_texto_page_climates
+
   # Script para limpiar texto y volver a main_page
   - id: clear_texto_and_return
     then:
@@ -259,6 +363,8 @@ script:
           id(countdown_progress) = 0;
           ESP_LOGI("cycle_texto_page_climates", "Reset countdown_progress to: %d", id(countdown_progress));
 
+      - delay: 200ms  # NEW: Give LVGL time to fully resume and stabilize
+
       # 1. Prepare UI
       - lvgl.widget.show: countdown_bar_main_container
 
@@ -280,6 +386,7 @@ script:
                 static const char* window_icons[] = {"\U000F11DB", "\U000F11DC"};
                 static const char* heating_icons[] = {"\U000F1722", "\U000F0238"};
                 static const char* square_icons[] = {"\U000F0763", "\U000F0764"};
+                static char buf[35];
 
                 int idx = id(texto_page_climate_index);
                 ESP_LOGI("cycle_texto_page_climates", "idx: %d", idx);
@@ -364,8 +471,7 @@ script:
 
                   // Actualizar el label de temperatura
                   if (!isnan(current_temp) && !isnan(set_temp)) {
-                    char buf[30];
-                    snprintf(buf, sizeof(buf), "%.1f°C - %.1f°C", current_temp, set_temp);
+                    snprintf(buf, sizeof(buf), "Current: %.1f°C - Set: %.1f°C", current_temp, set_temp);
                     lv_label_set_text(id(texto_page_temp_label), buf);
 
                     // Opcional: cambiar color según estado
@@ -412,17 +518,22 @@ script:
                   } else {
                     lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0x9E9E9E), 0);
                   }
-                  char buf[35];
-                  snprintf(buf, sizeof(buf), "Petin: %.1f°C Radon: %.1f Bq/m3", id(weather_temperature_sensor).state, radon_level);
-                  lv_label_set_text(id(texto_page_temp_label), buf);
+                  if (!isnan(id(weather_temperature_sensor).state) && !isnan(radon_level)) {
+                    snprintf(buf, sizeof(buf), "Petin: %.1f°C Radon: %.1f Bq/m3", id(weather_temperature_sensor).state, radon_level);
+                    lv_label_set_text(id(texto_page_temp_label), buf);
+                  } else {
+                    lv_label_set_text(id(texto_page_temp_label), "");
+                  }
                 } else if (idx == 5) {
                   lv_label_set_text(id(texto_page_window_label), "");
                   lv_label_set_text(id(texto_page_heat_label), "");
-
-                  char buf[35];
-                  snprintf(buf, sizeof(buf), "Bajo Techo: %.1f°C Galeria: %.1f°C", id(bt_temp).state, id(gt_temp).state);
-                  lv_label_set_text(id(texto_page_temp_label), buf);
-                  lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0x9E9E9E), 0);
+                  if (!isnan(id(bt_temp).state) && !isnan(id(gt_temp).state)) {
+                      snprintf(buf, sizeof(buf), "Bajo Techo: %.1f°C Galeria: %.1f°C", id(bt_temp).state, id(gt_temp).state);
+                      lv_label_set_text(id(texto_page_temp_label), buf);
+                      lv_obj_set_style_text_color(id(texto_page_temp_label), lv_color_hex(0x9E9E9E), 0);
+                  } else {
+                    lv_label_set_text(id(texto_page_temp_label), "");
+                  }
                 }
 
                 // Avanzar al siguiente climate
@@ -470,3 +581,8 @@ script:
                 id(countdown_progress) = 0;
             # - delay: 5s  # Esperar 5 segundos antes de mostrar el siguiente
       - logger.log: "cycle_texto_page_climates Stopped"
+
+interval:
+  - interval: 1s
+    then:
+      - script.execute: check_and_start_cycle

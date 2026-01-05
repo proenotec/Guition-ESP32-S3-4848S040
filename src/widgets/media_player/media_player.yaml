@@ -464,7 +464,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_40
+                                    text_font: icons_40
                                     text_color: color_misty_blue
                                     text: "${previous_track_icon}"
 
@@ -531,7 +531,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_40
+                                    text_font: icons_40
                                     text_color: color_misty_blue
                                     text: "${next_track_icon}"
 
@@ -582,7 +582,7 @@ lvgl:
                           - label:
                               align: center
                               text_color: color_misty_blue
-                              text_font: mdi_icons_28
+                              text_font: icons_28
                               text: "${power_icon}"
                               on_press:
                                 - homeassistant.action:
@@ -611,7 +611,7 @@ lvgl:
                               id: media_player_repeat_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: mdi_icons_28
+                              text_font: icons_28
                               text: "${repeat_all_icon}"
                               on_press:
                                 - script.execute: handle_repeat_press_script
@@ -638,7 +638,7 @@ lvgl:
                               id: media_player_source_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: mdi_icons_28
+                              text_font: icons_28
                               text: "${media_source}"
                         on_click:
                           - lambda: |-
@@ -670,7 +670,7 @@ lvgl:
                               id: media_player_mute_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: mdi_icons_28
+                              text_font: icons_28
                               text: "${volume_on_icon}"
                               on_press:
                                 - if:
@@ -711,7 +711,7 @@ lvgl:
                               id: media_player_vol_down_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: mdi_icons_28
+                              text_font: icons_28
                               text: "${volume_minus_icon}"
                               on_press:
                                 - homeassistant.action:
@@ -742,7 +742,7 @@ lvgl:
                               id: media_player_vol_up_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: mdi_icons_28
+                              text_font: icons_28
                               text: "${volume_plus_icon}"
                               on_press:
                                 - homeassistant.action:
@@ -823,7 +823,7 @@ lvgl:
                               id: media_player_state_label
                               align: CENTER
                               text_color: color_misty_blue
-                              text_font: mdi_icons_52
+                              text_font: icons_52
                               text: "${play_icon}"
                               on_press:
                                 - if:

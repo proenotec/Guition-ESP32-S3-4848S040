@@ -1,6 +1,39 @@
-- Info
-- Thermostat
-- Vacuum
-- Cover
-- Fan
-- Texto
+- buttons:
+  - id: btn_info
+    text: '
+
+      Info
+
+      '
+  - id: btn_thermostat
+    text: '
+
+      Thermostat
+
+      '
+- buttons:
+  - id: btn_vacuum
+    text: '
+
+      Vacuum
+
+      '
+  - id: btn_cover
+    text: '
+
+      Cover
+
+      '
+- buttons:
+  - id: btn_fan
+    text: '
+
+      Fan
+
+      '
+  - id: btn_texto
+    text: '
+
+      Texto
+
+      '

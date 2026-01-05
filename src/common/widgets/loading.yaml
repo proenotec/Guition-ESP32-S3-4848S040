@@ -154,6 +154,11 @@ api:
         condition:
           lambda: 'return (0 == client_info.find("Home Assistant "));'
         then:
+          # Send do_not_clear command on startup
+          - text_sensor.template.publish:
+              id: clear_texto_command
+              state: "do_not_clear"
+
           - script.execute: update_loading_page
           - lvgl.label.update:
               id: ha_status

@@ -5,7 +5,13 @@
 
 # En HACS: https://github.com/alaltitov/homeassistant-display-tools/blob/main/info.md
 
+# NAMES
+substitutions:
+  display_name:             display01
+  display_friendly_name:    Display Petin1
+
 packages:
+  common_substitutions: !include common/substitutions.yaml
   home: !include widgets/home/home.yaml
 
  # <================================== Cambiar
@@ -25,9 +31,9 @@ packages:
 
   devices: !include common/widgets/devices.yaml
 
-  light: !include widgets/light/light.yaml
+  light: !include widgets/light/light_generated.yaml
 
-substitutions: !include common/substitutions.yaml
+#substitutions: !include common/substitutions.yaml
 image: !include common/image.yaml
 font: !include common/fonts.yaml
 color: !include common/colors.yaml
@@ -45,13 +51,13 @@ i18n:
   sources:
     - translations/en.yaml
     - translations/es.yaml
-    - translations/fr.yaml
-    - translations/nl.yaml
-    - translations/pl.yaml
-    - translations/ru.yaml
-    - translations/si.yaml
-    - translations/it.yaml
     - translations/de.yaml
+#    - translations/fr.yaml
+#    - translations/nl.yaml
+#    - translations/pl.yaml
+#    - translations/ru.yaml
+#    - translations/si.yaml
+#    - translations/it.yaml
   default_locale: en
   use_psram: true
 
@@ -63,6 +69,8 @@ esphome:
     - <algorithm>
   platformio_options:
     board_build.flash_mode: dio
+#    build_flags:
+#      - -DUSE_LVGL_FONT
   on_boot:
     - priority: 400
       then:
@@ -111,7 +119,7 @@ logger:
   level: ${log_level}
   #baud_rate: 0
   logs:
-    lvgl: info
+    lvgl: ${log_level} #INFO
     wifi: ${log_level} #INFO
     sensor: ${log_level} #INFO
     component: ${log_level} #WARN   # Avoid spam from internal components
@@ -119,7 +127,7 @@ logger:
 
 api:
   encryption:
-    key: !secret display_key
+    key: !secret display1_key
 
 ota:
   - platform: esphome
@@ -192,7 +200,6 @@ ota:
       - lambda: |-
           id(lvgl_component).loop();
 
-
 wifi:
   networks:
    - ssid: $wifi_ssid1
@@ -203,11 +210,11 @@ wifi:
     - lvgl.label.update:
         id: wifi_status
         text_color: color_green
+
   on_disconnect:
     - lvgl.label.update:
         id: wifi_status
         text_color: color_steel_blue
-
 
 lvgl:
   id: lvgl_component
@@ -296,7 +303,6 @@ i2c:
       ignore_strapping_warning: true
     frequency: 100kHz
 
-
 touchscreen:
   platform: gt911
   id: touchscreen_id
@@ -305,13 +311,18 @@ touchscreen:
     mirror_y: false
   display: ${display_name}
   on_release:
-      - if:
-          condition: lvgl.is_paused
-          then:
-            - logger.log: "LVGL resuming"
-            - lvgl.resume:
-            - lvgl.widget.redraw:
-            - light.turn_on: display_backlight
+    - if:
+        condition: lvgl.is_paused
+        then:
+          - logger.log: "LVGL resuming"
+          - lvgl.resume:
+          - lvgl.widget.redraw:
+          - light.turn_on: display_backlight
+        #  - delay: 100ms  # Wait for backlight to turn on
+        #  - lambda: |-
+        #      if (id(active_lvgl_page) == "textopage") {
+        #        id(cycle_texto_page_climates).execute();
+        #      }
 
   # on_touch:
   #   - lambda: |-
@@ -326,12 +337,6 @@ spi:
   - id: lcd_spi
     clk_pin: GPIO48
     mosi_pin: GPIO47
-
-# display:
-#   - platform: mipi_rgb
-#     id: ${display_name}
-#     model: GUITION-4848S040
-#     rotation: 180
 
 display:
   - platform: st7701s
@@ -380,6 +385,28 @@ display:
         - 6          # B3
         - 7          # B4
         - 15         # B5
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    on_time:
+      # Restart every day at 3:00 AM
+      - seconds: 0
+        minutes: 0
+        hours: 3
+        then:
+          - logger.log:
+              level: INFO
+              tag: "restart"
+              format: "Daily restart at 3:00 AM"
+          - delay: 1s
+          - button.press: restart_button
+
+button:
+  - platform: restart
+    name: "Restart ESP32-2"
+    id: restart_button
+
 
 # interval:
 #   - interval: 5s

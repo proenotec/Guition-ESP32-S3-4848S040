@@ -2,6 +2,11 @@ packages:
   animations: !include animations.yaml
 
 globals:
+  - id: current_sensor_index
+    type: int
+    restore_value: no
+    initial_value: '1'
+
   - id: active_lvgl_page
     type: std::string
     restore_value: false
@@ -104,15 +109,29 @@ switch:
   - platform: lvgl
     name: "LVGL lock"
     id: display_lock_switch
-    widget: display_lock_btn
+    widget: display_lock_checkbox
     restore_mode: RESTORE_DEFAULT_OFF
     on_turn_on:
+      - logger.log:
+          format: "🔒 LOCK SWITCH TURNED ON - display_lock global will be set to TRUE"
+          level: INFO
       - lambda: |-
           id(display_lock) = true;
+          ESP_LOGI("LOCK", "Global display_lock is now: %s", id(display_lock) ? "TRUE" : "FALSE");
+      - logger.log:
+          format: "🔒 Executing display_block_buttons script"
+          level: INFO
       - script.execute: display_block_buttons
     on_turn_off:
+      - logger.log:
+          format: "🔓 LOCK SWITCH TURNED OFF - display_lock global will be set to FALSE"
+          level: INFO
       - lambda: |-
           id(display_lock) = false;
+          ESP_LOGI("LOCK", "Global display_lock is now: %s", id(display_lock) ? "TRUE" : "FALSE");
+      - logger.log:
+          format: "🔓 Executing display_block_buttons script"
+          level: INFO
       - script.execute: display_block_buttons
 
 time:
@@ -195,29 +214,69 @@ sensor:
                     format: "%.0f "
                     args: [id(weather_wind_speed_sensor).state]
 
-  # Home temperature sensor
+  # Home temperature sensor1
   - platform: homeassistant
-    id: home_temperature_sensor
-    entity_id: "${temperature_entity}"
+    id: home_temperature_sensor1
+    entity_id: "${temperature_entity1}"
     on_value:
       then:
-        - lvgl.label.update:
-            id: circle_home_widget_temp_value
-            text:
-              format: "%.1f°"
-              args: [id(home_temperature_sensor).state]
+        - script.execute: update_circle_display
 
-  # Home humidity sensor
+  # Home humidity sensor1
   - platform: homeassistant
-    id: home_humidity_sensor
-    entity_id: "${humidity_entity}"
+    id: home_humidity_sensor1
+    entity_id: "${humidity_entity1}"
     on_value:
       then:
-        - lvgl.label.update:
-            id: circle_home_widget_hum_value
-            text:
-              format: "%.0f%%"
-              args: [id(home_humidity_sensor).state]
+        - script.execute: update_circle_display
+
+  - platform: homeassistant
+    id: home_temperature_sensor2
+    entity_id: ${temperature_entity2}
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_circle_display
+
+  - platform: homeassistant
+    id: home_humidity_sensor2
+    entity_id: ${humidity_entity2}
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_circle_display
+
+  - platform: homeassistant
+    id: home_temperature_sensor3
+    entity_id: ${temperature_entity3}
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_circle_display
+
+  - platform: homeassistant
+    id: home_humidity_sensor3
+    entity_id: ${humidity_entity3}
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_circle_display
+
+  - platform: homeassistant
+    id: home_temperature_sensor4
+    entity_id: ${temperature_entity4}
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_circle_display
+
+  - platform: homeassistant
+    id: home_humidity_sensor4
+    entity_id: ${humidity_entity4}
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_circle_display
 
   # Chip temperature
   - platform: internal_temperature
@@ -416,7 +475,7 @@ lvgl:
                   x: 100
                   text: "${lock_icon}"
                   text_color: color_steel_blue
-                  text_font: icons_24
+                  text_font: mdi_icons_24
 
               # Heating status
               - label:
@@ -543,7 +602,7 @@ lvgl:
                     #     x: -30
                     #     y: 40
                     #     align: top_right
-                    #     text_font: mdi_icons_24
+                    #     text_font: icons_24
                     #     text_color: color_misty_blue
                     #     text: "${windsock_icon}"
                     #     text_align: right
@@ -1019,7 +1078,6 @@ lvgl:
                                 bg_color: color_steel_blue
                                 shadow_width: 4
                               on_click:
-                                #- lvgl.page.show: ${light_widget_name_1}_light_page
                                 - lvgl.page.show: light_control_page
                                 - delay: 250ms
                                 - lambda: |-
@@ -1055,7 +1113,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${ceiling_lights_icon}"
 
@@ -1120,7 +1178,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: mdi_icons_28
+                                    text_font: icons_28
                                     text_color: color_misty_blue
                                     text: "${dashboard_icon}"
 
@@ -1208,7 +1266,6 @@ lvgl:
                                 - lvgl.widget.hide: weather_forecast_daily
                                 - lvgl.widget.show: weather_forecast_hourly
 
-
                     - obj:
                         id: weather_forecast_daily
                         hidden: false
@@ -1257,33 +1314,53 @@ lvgl:
             width: 440
             height: 60
             pad_all: 0
-            align: bottom_mid
+            align: BOTTOM_MID
             bg_color: color_slate_blue_gray
-            shadow_opa: transp
-            border_opa: transp
+            shadow_opa: TRANSP
+            border_opa: TRANSP
             border_width: 0
             radius: 20
             widgets:
+              # ✅ Hidden checkbox FIRST (before button)
+              - checkbox:
+                  id: display_lock_checkbox
+                  hidden: true
+                  x: 10
+                  width: 50
+                  height: 50
+                  align: LEFT_MID
+
+              # ✅ Visible button at SAME position
               - button:
                   id: display_lock_btn
                   clickable: true
                   x: 10
                   width: 50
                   height: 50
-                  align: left_mid
-                  bg_opa: transp
-                  shadow_opa: transp
+                  align: LEFT_MID
+                  bg_opa: TRANSP
+                  shadow_opa: TRANSP
                   checked:
-                    bg_opa: transp
+                    bg_opa: TRANSP
                   widgets:
                     - label:
                         id: display_lock_indicator
-                        align: center
-                        text_color: color_misty_blue
+                        align: CENTER
+                        text_color: 0x87CEEB
                         text_font: mdi_icons_28
-                        text: "${lock_variant_icon}"
+                        text: "${lock_open_icon}"
                   on_long_press:
+                    - logger.log:
+                        format: "👆 LONG PRESS DETECTED on display_lock_btn"
+                        level: INFO
+                    - lambda: |-
+                        ESP_LOGI("LOCK_BTN", "Current switch state BEFORE toggle: %s",
+                                id(display_lock_switch).state ? "ON" : "OFF");
                     - switch.toggle: display_lock_switch
+                    - delay: 100ms
+                    - lambda: |-
+                        ESP_LOGI("LOCK_BTN", "Current switch state AFTER toggle: %s",
+                                id(display_lock_switch).state ? "ON" : "OFF");
 
               - button:
                   id: backlight_brightness_off_btn
@@ -1318,7 +1395,7 @@ lvgl:
                     - label:
                         align: center
                         text_color: color_misty_blue
-                        text_font: mdi_icons_28
+                        text_font: icons_28
                         text: "${home_icon}"
                   on_click:
                     - script.execute:
@@ -1341,19 +1418,28 @@ lvgl:
                         text_font: mdi_icons_28
                         text: "${weather_icon}"
                   on_click:
-                    - homeassistant.action:
-                        action: display_tools.get_forecasts
-                        data:
-                          entity_id: "${weather_entity}"
-                          type: "daily"
-                    - homeassistant.action:
-                        action: display_tools.get_forecasts
-                        data:
-                          entity_id: "${weather_entity}"
-                          type: "hourly"
-                    - script.execute:
-                        id: switch_to_mode
-                        target_mode: 1
+                    - if:
+                        condition:
+                          lambda: 'return id(current_mode) == 1;'
+                        then:
+                          - script.execute:
+                              id: switch_to_mode
+                              target_mode: 0
+                          - script.wait: switch_to_mode
+                        else:
+                          - homeassistant.action:
+                              action: display_tools.get_forecasts
+                              data:
+                                entity_id: "${weather_entity}"
+                                type: "daily"
+                          - homeassistant.action:
+                              action: display_tools.get_forecasts
+                              data:
+                                entity_id: "${weather_entity}"
+                                type: "hourly"
+                          - script.execute:
+                              id: switch_to_mode
+                              target_mode: 1
 
               - button:
                   id: info_widget_btn
@@ -1368,12 +1454,21 @@ lvgl:
                     - label:
                         align: center
                         text_color: color_misty_blue
-                        text_font: mdi_icons_28
+                        text_font: icons_28
                         text: "${info_icon}"
                   on_click:
-                    - script.execute:
-                        id: switch_to_mode
-                        target_mode: 2
+                    - if:
+                        condition:
+                          lambda: 'return id(current_mode) == 2;'
+                        then:
+                          - script.execute:
+                              id: switch_to_mode
+                              target_mode: 0
+                          - script.wait: switch_to_mode
+                        else:
+                          - script.execute:
+                              id: switch_to_mode
+                              target_mode: 2
 
               - button:
                   id: settings_widget_btn
@@ -1388,12 +1483,21 @@ lvgl:
                     - label:
                         align: center
                         text_color: color_misty_blue
-                        text_font: mdi_icons_28
+                        text_font: icons_28
                         text: "${settings_icon}"
                   on_click:
-                    - script.execute:
-                        id: switch_to_mode
-                        target_mode: 3
+                    - if:
+                        condition:
+                          lambda: 'return id(current_mode) == 3;'
+                        then:
+                          - script.execute:
+                              id: switch_to_mode
+                              target_mode: 0
+                          - script.wait: switch_to_mode
+                        else:
+                          - script.execute:
+                              id: switch_to_mode
+                              target_mode: 3
 
         # CIRCLE
         - obj:
@@ -1402,13 +1506,18 @@ lvgl:
             width: 150
             height: 150
             align: center
-            clickable: false
+            clickable: true  # Cambiar de false a true
             radius: 75
             pad_all: 0
             bg_color: color_black
             border_opa: transp
             border_width: 0
             shadow_opa: transp
+            on_click:
+              - lambda: |-
+                  int temps_amount = ${temps_amount};
+                  id(current_sensor_index) = (id(current_sensor_index) % temps_amount) + 1;
+              - script.execute: update_circle_display
             widgets:
               - obj:
                   width: 100
@@ -1419,7 +1528,6 @@ lvgl:
                   radius: 50
                   border_opa: transp
                   bg_color: color_slate_blue_gray
-
 
               - obj:
                   id: circle_home_widget
@@ -1441,26 +1549,40 @@ lvgl:
                         adjustable: false
                         adv_hittest: false
                         align: center
-                        width: 130
-                        height: 130
+                        width: 140        # Larger diameter
+                        height: 140
+                        min_value: 0
+                        max_value: 40
+                        value: 20
                         start_angle: 180
                         end_angle: 360
                         arc_width: 5
-                        arc_color: color_red
+                        arc_opa: transp
                         arc_rounded: false
+                        indicator:
+                          arc_color: 0xFF0000  # RED
+                          arc_width: 5
+
+                    # HUMIDITY ARC (inner ring - 0-180°)
                     - arc:
                         id: circle_home_widget_hum_arc
                         clickable: false
                         adjustable: false
                         adv_hittest: false
                         align: center
-                        width: 130
-                        height: 130
+                        width: 120        # Smaller diameter (20px difference)
+                        height: 120
+                        min_value: 0
+                        max_value: 100
+                        value: 50
                         start_angle: 0
                         end_angle: 180
                         arc_width: 5
-                        arc_color: color_blue
+                        arc_opa: transp
                         arc_rounded: false
+                        indicator:
+                          arc_color: 0x0000FF  # BLUE
+                          arc_width: 5
 
                     - obj:
                         width: 100
@@ -1473,27 +1595,27 @@ lvgl:
                         bg_opa: transp
                         widgets:
                           - label:
-                              y: 15
+                              y: 10
                               id: circle_home_widget_temp_value
                               align: top_mid
                               text_font: nunito_20
                               text_color: color_misty_blue
                               text: "22.5°"
                           - label:
-                              y: -15
+                              y: -10
                               id: circle_home_widget_hum_value
                               align: bottom_mid
                               text_font: nunito_20
                               text_color: color_misty_blue
                               text: "62 %"
-                          - obj:
-                              id: circle_home_widget_line
-                              width: 74
-                              height: 2
-                              align: center
-                              bg_color: color_misty_blue
-                              border_opa: transp
-                              shadow_opa: transp
+
+                          - label:
+                              id: circle_home_widget_icon
+                              y: -38
+                              align: bottom_mid
+                              text_font: mdi_icons_24
+                              text_color: color_misty_blue
+                              text: "${temp_icon_1}"
 
               - obj:
                   id: circle_info_widget
@@ -1621,25 +1743,104 @@ mapping:
       si: flags_si_img
       pl: flags_pl_img
 
-#script:
-#  # Centralized LVGL pause handler
-#  - id: pause_lvgl_display
-#    mode: restart
-#    then:
-#      - logger.log: "Pausing LVGL display"
-#      # Hide all select widgets
-#      - lvgl.widget.hide: cover_select_widget
-#      - lvgl.widget.hide: thermo_select_widget
-#      - lvgl.widget.hide: fan_select_widget
-#      - lvgl.widget.hide: light_select_widget
-#      # Switch to home page
-#      - logger.log: "Switching to Home Page"
-#      - lvgl.page.show: home_page
-#      - delay: 500ms
-#      # Pause LVGL
-#      - lvgl.pause:
-
 script:
+  - id: update_circle_display
+    mode: restart
+    then:
+      - lambda: |-
+          int sensor_idx = id(current_sensor_index);
+          int temps_amount = ${temps_amount};
+
+          // Obtener temperatura y humedad según el índice
+          float temp = 0.0;
+          float hum = 0.0;
+
+          if (sensor_idx == 1) {
+            temp = id(home_temperature_sensor1).state;
+            hum = id(home_humidity_sensor1).state;
+          } else if (sensor_idx == 2 && temps_amount >= 2) {
+            temp = id(home_temperature_sensor2).state;
+            hum = id(home_humidity_sensor2).state;
+          } else if (sensor_idx == 3 && temps_amount >= 3) {
+            temp = id(home_temperature_sensor3).state;
+            hum = id(home_humidity_sensor3).state;
+          } else if (sensor_idx == 4 && temps_amount >= 4) {
+            temp = id(home_temperature_sensor4).state;
+            hum = id(home_humidity_sensor4).state;
+          }
+      - lvgl.label.update:
+          id: circle_home_widget_temp_value
+          text: !lambda |-
+            int sensor_idx = id(current_sensor_index);
+            if (sensor_idx == 1) {
+              return str_sprintf("%.1f°", id(home_temperature_sensor1).state);
+            } else if (sensor_idx == 2) {
+              return str_sprintf("%.1f°", id(home_temperature_sensor2).state);
+            } else if (sensor_idx == 3) {
+              return str_sprintf("%.1f°", id(home_temperature_sensor3).state);
+            } else if (sensor_idx == 4) {
+              return str_sprintf("%.1f°", id(home_temperature_sensor4).state);
+            }
+            return str_sprintf("%.1f°", id(home_temperature_sensor1).state);
+      - lvgl.label.update:
+          id: circle_home_widget_hum_value
+          text: !lambda |-
+            int sensor_idx = id(current_sensor_index);
+            if (sensor_idx == 1) {
+              return str_sprintf("%.0f%%", id(home_humidity_sensor1).state);
+            } else if (sensor_idx == 2) {
+              return str_sprintf("%.0f%%", id(home_humidity_sensor2).state);
+            } else if (sensor_idx == 3) {
+              return str_sprintf("%.0f%%", id(home_humidity_sensor3).state);
+            } else if (sensor_idx == 4) {
+              return str_sprintf("%.0f%%", id(home_humidity_sensor4).state);
+            }
+            return str_sprintf("%.0f%%", id(home_humidity_sensor1).state);
+      - lvgl.arc.update:
+          id: circle_home_widget_temp_arc
+          value: !lambda |-
+            int sensor_idx = id(current_sensor_index);
+            if (sensor_idx == 1) {
+              return (int)id(home_temperature_sensor1).state;
+            } else if (sensor_idx == 2) {
+              return (int)id(home_temperature_sensor2).state;
+            } else if (sensor_idx == 3) {
+              return (int)id(home_temperature_sensor3).state;
+            } else if (sensor_idx == 4) {
+              return (int)id(home_temperature_sensor4).state;
+            }
+            return (int)id(home_temperature_sensor1).state;
+      - lvgl.arc.update:
+          id: circle_home_widget_hum_arc
+          value: !lambda |-
+            int sensor_idx = id(current_sensor_index);
+            if (sensor_idx == 1) {
+              return (int)id(home_humidity_sensor1).state;
+            } else if (sensor_idx == 2) {
+              return (int)id(home_humidity_sensor2).state;
+            } else if (sensor_idx == 3) {
+              return (int)id(home_humidity_sensor3).state;
+            } else if (sensor_idx == 4) {
+              return (int)id(home_humidity_sensor4).state;
+            }
+            return (int)id(home_humidity_sensor1).state;
+
+      # NUEVO: Actualizar el icono según el sensor
+      - lvgl.label.update:
+          id: circle_home_widget_icon
+          text: !lambda |-
+            int sensor_idx = id(current_sensor_index);
+            if (sensor_idx == 1) {
+              return "${temp_icon_1}";
+            } else if (sensor_idx == 2) {
+              return "${temp_icon_2}";
+            } else if (sensor_idx == 3) {
+              return "${temp_icon_3}";
+            } else if (sensor_idx == 4) {
+              return "${temp_icon_4}";
+            }
+            return "${temp_icon_1}";
+
   # Centralized LVGL pause handler
   - id: pause_lvgl_display
     mode: restart
@@ -1714,45 +1915,97 @@ script:
           lv_roller_set_options(roller_obj, options.c_str(), LV_ROLLER_MODE_NORMAL);
           lv_roller_set_selected(roller_obj, old_selection, LV_ANIM_OFF);
 
-
   - id: display_block_buttons
     mode: restart
     then:
+      - logger.log:
+          format: "🔧 display_block_buttons script started"
+          level: INFO
+      - lambda: |-
+          ESP_LOGI("BLOCK_BTNS", "Switch state: %s",
+                  id(display_lock_switch).state ? "ON (LOCKED)" : "OFF (UNLOCKED)");
+          ESP_LOGI("BLOCK_BTNS", "Global display_lock: %s",
+                  id(display_lock) ? "TRUE" : "FALSE");
       - if:
           condition:
-            switch.is_off: display_lock_switch
+            - switch.is_off: display_lock_switch
           then:
+            - logger.log:
+                format: "✅ UNLOCKING - Setting buttons to clickable"
+                level: INFO
             - lvgl.label.update:
                 id: lock_status
-                text_color: color_steel_blue
-            - lvgl.button.update: { id: backlight_brightness_off_btn, clickable: true }
-            - lvgl.button.update: { id: home_widget_btn, clickable: true }
-            - lvgl.button.update: { id: weather_widget_btn, clickable: true }
-            - lvgl.button.update: { id: info_widget_btn, clickable: true }
-            - lvgl.button.update: { id: settings_widget_btn, clickable: true }
-            - lvgl.button.update: { id: home_lights_btn, clickable: true }
-            - lvgl.button.update: { id: home_devices_btn, clickable: true }
-            - lvgl.button.update: { id: weather_forecast_daily_btn, clickable: true }
-            - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: true }
-            - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: true }
-            - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: true }
-            - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: true }
+                text_color: 0x5CA848
+            - lvgl.label.update:
+                id: display_lock_indicator
+                text: "${lock_open_icon}"  # unlocked icon
+            - lvgl.button.update:
+                id: backlight_brightness_off_btn
+                clickable: true
+            - lvgl.button.update:
+                id: home_widget_btn
+                clickable: true
+            - lvgl.button.update:
+                id: weather_widget_btn
+                clickable: true
+            - lvgl.button.update:
+                id: info_widget_btn
+                clickable: true
+            - lvgl.button.update:
+                id: settings_widget_btn
+                clickable: true
+            - lvgl.button.update:
+                id: home_lights_btn
+                clickable: true
+            - lvgl.button.update:
+                id: home_devices_btn
+                clickable: true
+            - lvgl.obj.update:
+                id: circle_widget_background
+                clickable: true
+            - logger.log:
+                format: "✅ Buttons unlocked successfully"
+                level: INFO
           else:
+            - logger.log:
+                format: "🔒 LOCKING - Setting buttons to non-clickable"
+                level: INFO
             - lvgl.label.update:
                 id: lock_status
-                text_color: color_red
-            - lvgl.button.update: { id: backlight_brightness_off_btn, clickable: false }
-            - lvgl.button.update: { id: home_widget_btn, clickable: false }
-            - lvgl.button.update: { id: weather_widget_btn, clickable: false }
-            - lvgl.button.update: { id: info_widget_btn, clickable: false }
-            - lvgl.button.update: { id: settings_widget_btn, clickable: false }
-            - lvgl.button.update: { id: home_lights_btn, clickable: false }
-            - lvgl.button.update: { id: home_devices_btn, clickable: false }
-            - lvgl.button.update: { id: weather_forecast_daily_btn, clickable: false }
-            - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: false }
-            - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: false }
-            - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: false }
-            - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: false }
+                text_color: 0xFF0000
+            - lvgl.label.update:
+                id: display_lock_indicator
+                text: "${lock_icon}"  # locked icon
+            - lvgl.button.update:
+                id: backlight_brightness_off_btn
+                clickable: false
+            - lvgl.button.update:
+                id: home_widget_btn
+                clickable: false
+            - lvgl.button.update:
+                id: weather_widget_btn
+                clickable: false
+            - lvgl.button.update:
+                id: info_widget_btn
+                clickable: false
+            - lvgl.button.update:
+                id: settings_widget_btn
+                clickable: false
+            - lvgl.button.update:
+                id: home_lights_btn
+                clickable: false
+            - lvgl.button.update:
+                id: home_devices_btn
+                clickable: false
+            - lvgl.obj.update:
+                id: circle_widget_background
+                clickable: false
+            - logger.log:
+                format: "🔒 Buttons locked successfully"
+                level: INFO
+      - logger.log:
+          format: "🔧 display_block_buttons script completed"
+          level: INFO
 
   - id: update_weather_image
     then:
@@ -2049,10 +2302,6 @@ script:
 
       - script.execute: update_hourly_display
 
-
-
-
-
   # ========================================
   # 3️⃣ UPDATE DAILY DISPLAY (FIXED)
   # ========================================
@@ -2062,7 +2311,7 @@ script:
           if (id(forecast_daily_count) == 0) return;
           if (!id(weather_forecast_daily)) return;
 
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          // static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
 
           lv_obj_clean(id(weather_forecast_daily));
 
@@ -2127,9 +2376,10 @@ script:
             if (day_label) {
               lv_label_set_text(day_label, get_day_name(i));
               lv_obj_align(day_label, LV_ALIGN_TOP_MID, 0, 0);
-              lv_obj_set_style_text_font(day_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(day_label, id(nunito_16)->get_lv_font(), 0);
               lv_obj_set_style_text_color(day_label, lv_color_hex(0x9BA2BC), 0);
             }
+
 
             // Icon
             lv_obj_t* icon = lv_img_create(item);
@@ -2145,7 +2395,7 @@ script:
               snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_daily_temps)[i]);
               lv_label_set_text(temp_label, temp_str);
               lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
-              lv_obj_set_style_text_font(temp_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(temp_label, id(nunito_16)->get_lv_font(), 0);
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
@@ -2160,7 +2410,7 @@ script:
           if (id(forecast_hourly_count) == 0) return;
           if (!id(weather_forecast_hourly)) return;
 
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          // static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
 
           lv_obj_clean(id(weather_forecast_hourly));
 
@@ -2243,7 +2493,7 @@ script:
               std::string time_str = get_time_str(id(forecast_hourly_timestamps)[i]);
               lv_label_set_text(time_label, time_str.c_str());
               lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 0);
-              lv_obj_set_style_text_font(time_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(time_label, id(nunito_16)->get_lv_font(), 0);
               lv_obj_set_style_text_color(time_label, lv_color_hex(0x9BA2BC), 0);
             }
 
@@ -2261,7 +2511,7 @@ script:
               snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_hourly_temps)[i]);
               lv_label_set_text(temp_label, temp_str);
               lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
-              lv_obj_set_style_text_font(temp_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(temp_label, id(nunito_16)->get_lv_font(), 0);
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }

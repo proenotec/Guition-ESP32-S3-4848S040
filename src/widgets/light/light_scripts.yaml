@@ -1,0 +1,344 @@
+# Auto-generated LVGL scripts based on lights_amount
+# Generated for 7 lights
+
+script:
+  - id: light_switch_index
+    parameters:
+      position: int
+    then:
+      - lambda: |-
+          id(current_light_index) = position;
+          std::string entity = "";
+          switch (position) {
+            case 1: entity = "${light_entity_1}"; break;
+            case 2: entity = "${light_entity_2}"; break;
+            case 3: entity = "${light_entity_3}"; break;
+            case 4: entity = "${light_entity_4}"; break;
+            case 5: entity = "${light_entity_5}"; break;
+            case 6: entity = "${light_entity_6}"; break;
+            case 7: entity = "${light_entity_7}"; break;
+            default: entity = "${light_entity_1}";
+          }
+
+          id(current_light_entity) = entity;
+          ESP_LOGD("light_switch", "Switched to light index %d: %s", position, entity.c_str());
+
+          // Copy per-light capabilities
+          switch (position) {
+            case 1:
+              id(light_supports_color_temp) = id(light_1_supports_color_temp);
+              id(light_supports_hs) = id(light_1_supports_hs);
+              id(light_supports_rgb) = id(light_1_supports_rgb);
+              id(light_supports_brightness) = id(light_1_supports_brightness);
+              break;
+            case 2:
+              id(light_supports_color_temp) = id(light_2_supports_color_temp);
+              id(light_supports_hs) = id(light_2_supports_hs);
+              id(light_supports_rgb) = id(light_2_supports_rgb);
+              id(light_supports_brightness) = id(light_2_supports_brightness);
+              break;
+            case 3:
+              id(light_supports_color_temp) = id(light_3_supports_color_temp);
+              id(light_supports_hs) = id(light_3_supports_hs);
+              id(light_supports_rgb) = id(light_3_supports_rgb);
+              id(light_supports_brightness) = id(light_3_supports_brightness);
+              break;
+            case 4:
+              id(light_supports_color_temp) = id(light_4_supports_color_temp);
+              id(light_supports_hs) = id(light_4_supports_hs);
+              id(light_supports_rgb) = id(light_4_supports_rgb);
+              id(light_supports_brightness) = id(light_4_supports_brightness);
+              break;
+            case 5:
+              id(light_supports_color_temp) = id(light_5_supports_color_temp);
+              id(light_supports_hs) = id(light_5_supports_hs);
+              id(light_supports_rgb) = id(light_5_supports_rgb);
+              id(light_supports_brightness) = id(light_5_supports_brightness);
+              break;
+            case 6:
+              id(light_supports_color_temp) = id(light_6_supports_color_temp);
+              id(light_supports_hs) = id(light_6_supports_hs);
+              id(light_supports_rgb) = id(light_6_supports_rgb);
+              id(light_supports_brightness) = id(light_6_supports_brightness);
+              break;
+            case 7:
+              id(light_supports_color_temp) = id(light_7_supports_color_temp);
+              id(light_supports_hs) = id(light_7_supports_hs);
+              id(light_supports_rgb) = id(light_7_supports_rgb);
+              id(light_supports_brightness) = id(light_7_supports_brightness);
+              break;
+          }
+
+          // Force publish brightness
+          if (position == 1 && id(light_brightness_1).has_state()) { id(light_brightness).publish_state(id(light_brightness_1).state); }
+          if (position == 2 && id(light_brightness_2).has_state()) { id(light_brightness).publish_state(id(light_brightness_2).state); }
+          if (position == 3 && id(light_brightness_3).has_state()) { id(light_brightness).publish_state(id(light_brightness_3).state); }
+          if (position == 4 && id(light_brightness_4).has_state()) { id(light_brightness).publish_state(id(light_brightness_4).state); }
+          if (position == 5 && id(light_brightness_5).has_state()) { id(light_brightness).publish_state(id(light_brightness_5).state); }
+          if (position == 6 && id(light_brightness_6).has_state()) { id(light_brightness).publish_state(id(light_brightness_6).state); }
+          if (position == 7 && id(light_brightness_7).has_state()) { id(light_brightness).publish_state(id(light_brightness_7).state); }
+
+          // State
+          bool state_val = false;
+          switch (position) {
+            case 1: state_val = id(light_state_1).state; break;
+            case 2: state_val = id(light_state_2).state; break;
+            case 3: state_val = id(light_state_3).state; break;
+            case 4: state_val = id(light_state_4).state; break;
+            case 5: state_val = id(light_state_5).state; break;
+            case 6: state_val = id(light_state_6).state; break;
+            case 7: state_val = id(light_state_7).state; break;
+            default: state_val = false;
+          }
+
+          id(light_state).publish_state(state_val);
+
+          // Update friendly name
+          std::string name = "";
+          switch (position) {
+            case 1: name = id(light_name_1_stored); break;
+            case 2: name = id(light_name_2_stored); break;
+            case 3: name = id(light_name_3_stored); break;
+            case 4: name = id(light_name_4_stored); break;
+            case 5: name = id(light_name_5_stored); break;
+            case 6: name = id(light_name_6_stored); break;
+            case 7: name = id(light_name_7_stored); break;
+            default: name = "Light";
+          }
+
+          if (name.empty()) {
+            name = "Undefined";
+          }
+
+          lv_label_set_text(id(light_name_label), name.c_str());
+
+          // Auto-select mode
+          if (!(id(light_supports_color_temp) && (id(light_supports_hs) || id(light_supports_rgb)))) {
+            if (id(light_supports_hs) || id(light_supports_rgb)) {
+              id(light_is_temp_mode) = false;
+            } else if (id(light_supports_color_temp)) {
+              id(light_is_temp_mode) = true;
+            }
+          }
+
+          id(light_toggle_gradient).execute();
+
+  - id: update_home_lights_btn_color
+    then:
+      - lambda: |-
+          // Check if any light is on
+          bool any_light_on = false;
+          if (id(light_state_1).state) { any_light_on = true; }
+          if (id(light_state_2).state) { any_light_on = true; }
+          if (id(light_state_3).state) { any_light_on = true; }
+          if (id(light_state_4).state) { any_light_on = true; }
+          if (id(light_state_5).state) { any_light_on = true; }
+          if (id(light_state_6).state) { any_light_on = true; }
+          if (id(light_state_7).state) { any_light_on = true; }
+          ESP_LOGD("home_lights_btn", "Any light on: %d", any_light_on);
+
+          // Change button shadow color
+          if (any_light_on) {
+            lv_obj_set_style_shadow_color(id(home_lights_btn), lv_color_hex(0xFF8C00), 0);
+            lv_obj_set_style_shadow_width(id(home_lights_btn), 12, 0);
+          } else {
+            lv_obj_set_style_shadow_color(id(home_lights_btn), lv_color_hex(0x000000), 0);
+            lv_obj_set_style_shadow_width(id(home_lights_btn), 8, 0);
+          }
+
+          // Find icon in hierarchy
+          lv_obj_t* parent = lv_obj_get_parent(id(home_lights_btn));
+          if (parent != nullptr) {
+            uint32_t parent_child_count = lv_obj_get_child_cnt(parent);
+            for (uint32_t i = 0; i < parent_child_count; i++) {
+              lv_obj_t* child = lv_obj_get_child(parent, i);
+              if (child != nullptr && child != id(home_lights_btn)) {
+                uint32_t grandchild_count = lv_obj_get_child_cnt(child);
+                ESP_LOGD("home_lights_btn", "Child %d has %d grandchildren", i, grandchild_count);
+                for (uint32_t j = 0; j < grandchild_count; j++) {
+                  lv_obj_t* grandchild = lv_obj_get_child(child, j);
+                  if (grandchild != nullptr) {
+                    if (any_light_on) {
+                      lv_obj_set_style_text_color(grandchild, lv_color_hex(0xFFA500), 0);
+                    } else {
+                      lv_obj_set_style_text_color(grandchild, lv_color_hex(0xB0C4DE), 0);
+                    }
+                    ESP_LOGD("home_lights_btn", "Changed text color on grandchild %d of child %d", j, i);
+                  }
+                }
+              }
+            }
+          }
+
+  - id: light_update_all_selector_icons
+    then:
+      - lambda: |-
+          auto get_icon_color = [](int index) -> lv_color_t {
+            bool is_on = false;
+            int brightness = 100;
+            float hue = 0.0f;
+            float sat = 0.0f;
+            float temp = 3000.0f;
+            bool has_color = false;
+            bool is_temp_mode_local = false;
+
+            // Get state for this light
+            switch (index) {
+              case 1:
+                is_on = id(light_state_1).state;
+                if (id(light_brightness_1).has_state()) brightness = id(light_brightness_1).state;
+                break;
+              case 2:
+                is_on = id(light_state_2).state;
+                if (id(light_brightness_2).has_state()) brightness = id(light_brightness_2).state;
+                break;
+              case 3:
+                is_on = id(light_state_3).state;
+                if (id(light_brightness_3).has_state()) brightness = id(light_brightness_3).state;
+                break;
+              case 4:
+                is_on = id(light_state_4).state;
+                if (id(light_brightness_4).has_state()) brightness = id(light_brightness_4).state;
+                break;
+              case 5:
+                is_on = id(light_state_5).state;
+                if (id(light_brightness_5).has_state()) brightness = id(light_brightness_5).state;
+                break;
+              case 6:
+                is_on = id(light_state_6).state;
+                if (id(light_brightness_6).has_state()) brightness = id(light_brightness_6).state;
+                break;
+              case 7:
+                is_on = id(light_state_7).state;
+                if (id(light_brightness_7).has_state()) brightness = id(light_brightness_7).state;
+                break;
+            }
+
+            // If light is OFF, return gray
+            if (!is_on) {
+              return lv_color_make(153, 153, 153);
+            }
+
+            // Check if this light has color capabilities
+            std::string modes = "";
+            switch (index) {
+              case 1: modes = id(light_supported_modes_1).state; break;
+              case 2: modes = id(light_supported_modes_2).state; break;
+              case 3: modes = id(light_supported_modes_3).state; break;
+              case 4: modes = id(light_supported_modes_4).state; break;
+              case 5: modes = id(light_supported_modes_5).state; break;
+              case 6: modes = id(light_supported_modes_6).state; break;
+              case 7: modes = id(light_supported_modes_7).state; break;
+            }
+
+            bool supports_temp = (modes.find("color_temp") != std::string::npos);
+            bool supports_hs = (modes.find("hs") != std::string::npos);
+            bool supports_rgb = (modes.find("rgb") != std::string::npos);
+            has_color = supports_temp || supports_hs || supports_rgb;
+
+            // If light is ON but has no color support, return yellow
+            if (!has_color) {
+              uint8_t val = 204;
+              if (modes.find("brightness") != std::string::npos || supports_hs || supports_rgb || supports_temp) {
+                float bright_scale = 0.6 + (brightness / 255.0 * 0.4);
+                val = 255 * bright_scale;
+              }
+              return lv_color_make(val, val, 0);
+            }
+
+            // Get color data for this light
+            std::string hs_str = "";
+            switch (index) {
+              case 1: hs_str = id(light_hs_color_1).state; break;
+              case 2: hs_str = id(light_hs_color_2).state; break;
+              case 3: hs_str = id(light_hs_color_3).state; break;
+              case 4: hs_str = id(light_hs_color_4).state; break;
+              case 5: hs_str = id(light_hs_color_5).state; break;
+              case 6: hs_str = id(light_hs_color_6).state; break;
+              case 7: hs_str = id(light_hs_color_7).state; break;
+            }
+
+            // Parse HS if available
+            if (!hs_str.empty() && hs_str != "None" && (supports_hs || supports_rgb)) {
+              size_t start = hs_str.find('(') + 1;
+              size_t comma = hs_str.find(',');
+              size_t end = hs_str.find(')');
+              if (start < comma && comma < end) {
+                hue = atof(hs_str.substr(start, comma - start).c_str());
+                sat = atof(hs_str.substr(comma + 1, end - comma - 1).c_str());
+                is_temp_mode_local = false;
+              }
+            } else if (supports_temp) {
+              switch (index) {
+                case 1:
+                  if (id(light_color_temp_1).has_state()) temp = id(light_color_temp_1).state;
+                  break;
+                case 2:
+                  if (id(light_color_temp_2).has_state()) temp = id(light_color_temp_2).state;
+                  break;
+                case 3:
+                  if (id(light_color_temp_3).has_state()) temp = id(light_color_temp_3).state;
+                  break;
+                case 4:
+                  if (id(light_color_temp_4).has_state()) temp = id(light_color_temp_4).state;
+                  break;
+                case 5:
+                  if (id(light_color_temp_5).has_state()) temp = id(light_color_temp_5).state;
+                  break;
+                case 6:
+                  if (id(light_color_temp_6).has_state()) temp = id(light_color_temp_6).state;
+                  break;
+                case 7:
+                  if (id(light_color_temp_7).has_state()) temp = id(light_color_temp_7).state;
+                  break;
+              }
+              is_temp_mode_local = true;
+            }
+
+            // Calculate RGB color
+            uint8_t r = 255, g = 255, b = 255;
+            if (is_temp_mode_local) {
+              // Kelvin to RGB
+              float t = temp / 100.0f;
+              float r_val = 0.0f, g_val = 0.0f, b_val = 0.0f;
+              if (t <= 66.0f) {
+                r_val = 255.0f;
+                g_val = 99.4708025861f * log(t) - 161.1195681661f;
+                if (t <= 19.0f) b_val = 0.0f;
+                else b_val = 138.5177312231f * log(t - 10.0f) - 305.0447927307f;
+              } else {
+                r_val = 329.698727446f * pow(t - 60.0f, -0.1332047592f);
+                g_val = 288.1221695283f * pow(t - 60.0f, -0.0755148492f);
+                b_val = 255.0f;
+              }
+              r = (uint8_t)fminf(fmaxf(r_val, 0.0f), 255.0f);
+              g = (uint8_t)fminf(fmaxf(g_val, 0.0f), 255.0f);
+              b = (uint8_t)fminf(fmaxf(b_val, 0.0f), 255.0f);
+            } else {
+              // HS to RGB
+              uint16_t h = (uint16_t)fminf(fmaxf(hue, 0.0f), 359.0f);
+              uint8_t s = (uint8_t)fminf(fmaxf(sat, 0.0f), 100.0f);
+              lv_color_t full = lv_color_hsv_to_rgb(h, s, 100);
+              lv_color32_t full32;
+              full32.full = lv_color_to32(full);
+              r = full32.ch.red;
+              g = full32.ch.green;
+              b = full32.ch.blue;
+            }
+
+            // Apply brightness scaling (60% to 100%)
+            float bright_scale = 0.6 + (brightness / 255.0 * 0.4);
+            r = r * bright_scale;
+            g = g * bright_scale;
+            b = b * bright_scale;
+            return lv_color_make(r, g, b);
+          };
+
+          // Update all selector icons
+          lv_obj_set_style_text_color(id(light_icon_1), get_icon_color(1), 0);
+          lv_obj_set_style_text_color(id(light_icon_2), get_icon_color(2), 0);
+          lv_obj_set_style_text_color(id(light_icon_3), get_icon_color(3), 0);
+          lv_obj_set_style_text_color(id(light_icon_4), get_icon_color(4), 0);
+          lv_obj_set_style_text_color(id(light_icon_5), get_icon_color(5), 0);
+          lv_obj_set_style_text_color(id(light_icon_6), get_icon_color(6), 0);
+          lv_obj_set_style_text_color(id(light_icon_7), get_icon_color(7), 0);

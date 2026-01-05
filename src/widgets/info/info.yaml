@@ -152,7 +152,7 @@ lvgl:
   #                  - label:
   #                      text: ${home_icon}
   #                      align: CENTER
-  #                      text_font: mdi_icons_28
+  #                      text_font: icons_28
   #                      text_color: color_misty_blue
   #                on_click:
   #                  - lvgl.page.show: home_page

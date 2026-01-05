@@ -1,30 +1,30 @@
 - if:
     condition:
-      lambda: return x == 0;
+      lambda: return x == id(btn_info);
     then:
     - lvgl.page.show: info_page
 - if:
     condition:
-      lambda: return x == 1;
+      lambda: return x == id(btn_thermostat);
     then:
     - lvgl.page.show: therm_page
 - if:
     condition:
-      lambda: return x == 2;
+      lambda: return x == id(btn_vacuum);
     then:
     - lvgl.page.show: vacuum_page
 - if:
     condition:
-      lambda: return x == 3;
+      lambda: return x == id(btn_cover);
     then:
     - lvgl.page.show: cover_page
 - if:
     condition:
-      lambda: return x == 4;
+      lambda: return x == id(btn_fan);
     then:
     - lvgl.page.show: fan_page
 - if:
     condition:
-      lambda: return x == 5;
+      lambda: return x == id(btn_texto);
     then:
     - lvgl.page.show: texto_page

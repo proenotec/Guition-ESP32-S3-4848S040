@@ -1,20 +1,22 @@
-lights_amount: "6" # choice 1,2,3,4,5 or 6
+lights_amount: "7" # choice 1,2,3,4,5, 6 or 7
 
-light_entity_1: "light.petinfan_2_fanlight_2"
-light_entity_2: "light.gvfsonoffdual_1_lamp"
-light_entity_3: "light.a1_slwf_09_main"
-light_entity_4: "switch.zbswitch11_kitchen_leds"
+light_entity_1: "light.gvfsonoffdual_1_lamp"
+light_entity_2: "switch.zbswitch11_kitchen_leds"
+light_entity_3: "light.petinfan_2_fanlight_2"
+light_entity_4: "light.a1_slwf_09_main"
 light_entity_5: "light.petinfan_1_fanlight_1"
 light_entity_6: "light.ledsbathroom_l1"
+light_entity_7: "switch.zbswitch9_galeria"
 
-light_icon_1: "\U000F18DD" # ceiling_light_multiple
-light_icon_2: "\U000F08DD" # floor_lamp
-light_icon_3: "\U000F0914" # track_light
-light_icon_4: "\U000F11E1" # vanity_light
-light_icon_5: "\U000F0335" # lightbulb
-light_icon_6: "\U000F0769" # lamp
+light_icon_1: "\U0000e916" # floor_lamp
+light_icon_2: "\U0000e915" # vanity_light
+light_icon_3: "\U0000e907" # ceiling_light_multiple
+light_icon_4: "\U0000e917" # track_light
+light_icon_5: "\U0000e908" # lightbulb
+light_icon_6: "\U0000e919" # lamp
+light_icon_7: "\U0000e918" # ceiling_lamp
 
-lightbulb: "\U000F0335"
+lightbulb: "\U0000e908"
 
 # ceiling_icon:                  "\U0000e907"
 # lightbulb_icon:                "\U0000e908"
@@ -24,6 +26,7 @@ lightbulb: "\U000F0335"
 # ceiling_lamp_icon:             "\U0000e918"
 # ceiling_lamp_variant_icon:     "\U0000e921"
 # night_lamp_icon:               "\U0000e919"
+
 # track_light:                  "\U000F0914"
 # ceiling_light_multiple:       "\U000F18DD"
 # floor_lamp:                   "\U000F08DD"

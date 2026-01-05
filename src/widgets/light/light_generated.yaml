@@ -1,0 +1,1009 @@
+substitutions: !include substitutions.yaml
+
+packages:
+  lights_scr: !include light_scripts.yaml
+  lvgl_scr: !include lvgl_scripts.yaml
+  # Include LVGL display UI section
+  lvgl_ui: !include light_ui_lvgl_generated.yaml
+
+globals:
+  - id: light_1_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_1_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_1_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_1_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_2_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_2_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_2_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_2_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_3_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_3_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_3_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_3_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_4_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_4_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_4_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_4_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_5_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_5_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_5_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_5_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_6_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_6_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_6_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_6_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_7_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_7_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_7_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_7_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_name_1_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: light_name_2_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: light_name_3_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: light_name_4_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: light_name_5_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: light_name_6_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: light_name_7_stored
+    type: std::string
+    initial_value: '""'
+    restore_value: no
+  - id: current_light_index
+    type: int
+    initial_value: '1'
+    restore_value: no
+  - id: current_light_entity
+    type: std::string
+    initial_value: '"${light_entity_1}"'
+    restore_value: no
+  - id: light_initial_load_complete
+    type: bool
+    initial_value: 'false'
+  - id: light_supports_color_temp
+    type: bool
+    initial_value: 'false'
+  - id: light_supports_hs
+    type: bool
+    initial_value: 'false'
+  - id: light_supports_rgb
+    type: bool
+    initial_value: 'false'
+  - id: light_supports_brightness
+    type: bool
+    initial_value: 'false'
+  - id: light_is_temp_mode
+    type: bool
+    initial_value: 'false'
+  - id: light_current_hue
+    type: float
+    initial_value: '0.0'
+  - id: light_current_saturation
+    type: float
+    initial_value: '0.0'
+  - id: light_current_brightness
+    type: int
+    initial_value: '100'
+  - id: light_current_color_temp
+    type: float
+    initial_value: '3000.0'
+
+binary_sensor:
+  - platform: homeassistant
+    id: light_state_1
+    entity_id: "${light_entity_1}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: homeassistant
+    id: light_state_2
+    entity_id: "${light_entity_2}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: homeassistant
+    id: light_state_3
+    entity_id: "${light_entity_3}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: homeassistant
+    id: light_state_4
+    entity_id: "${light_entity_4}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: homeassistant
+    id: light_state_5
+    entity_id: "${light_entity_5}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: homeassistant
+    id: light_state_6
+    entity_id: "${light_entity_6}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: homeassistant
+    id: light_state_7
+    entity_id: "${light_entity_7}"
+    internal: true
+    trigger_on_initial_state: true
+    on_state:
+      - script.execute: light_update_all_selector_icons
+      - script.execute: update_home_lights_btn_color
+  - platform: template
+    id: light_state
+    lambda: |-
+      auto get_state = [&](int idx) -> bool {
+        switch (idx) {
+          case 1: return id(light_state_1).state;
+          case 2: return id(light_state_2).state;
+          case 3: return id(light_state_3).state;
+          case 4: return id(light_state_4).state;
+          case 5: return id(light_state_5).state;
+          case 6: return id(light_state_6).state;
+          case 7: return id(light_state_7).state;
+          default: return false;
+        }
+      };
+      return get_state(id(current_light_index));
+    on_press:
+      - script.execute: light_update_lightbulb_color
+      - script.execute: light_update_button_icon_color
+    on_release:
+      - script.execute: light_update_lightbulb_color
+      - script.execute: light_update_button_icon_color
+  - platform: lvgl
+    id: light_btn_control
+    widget: light_lightbulb_btn
+    on_click:
+      - min_length: 50ms
+        max_length: 500ms
+        then:
+          - lambda: 'ESP_LOGD("light_btn", "Short press - toggling light");'
+          - homeassistant.service:
+              service: homeassistant.toggle
+              data:
+                entity_id: !lambda 'return id(current_light_entity);'
+      - min_length: 800ms
+        max_length: 3000ms
+        then:
+          - if:
+              condition:
+                lambda: |-
+                  return id(light_supports_color_temp) &&
+                         (id(light_supports_hs) || id(light_supports_rgb));
+              then:
+                - lambda: |-
+                    id(light_is_temp_mode) = !id(light_is_temp_mode);
+                    ESP_LOGD("light_btn", "Long press - switching mode to: %s",
+                             id(light_is_temp_mode) ? "ColorTemp" : "HS");
+                - script.execute: light_toggle_gradient
+              else:
+                - lambda: 'ESP_LOGD("light_btn", "Long press ignored - only one color mode supported");'
+
+sensor:
+  - platform: homeassistant
+    id: light_brightness_1
+    entity_id: "${light_entity_1}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_brightness_2
+    entity_id: "${light_entity_2}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_brightness_3
+    entity_id: "${light_entity_3}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_brightness_4
+    entity_id: "${light_entity_4}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_brightness_5
+    entity_id: "${light_entity_5}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_brightness_6
+    entity_id: "${light_entity_6}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_brightness_7
+    entity_id: "${light_entity_7}"
+    attribute: brightness
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 7;'
+          then:
+            - sensor.template.publish:
+                id: light_brightness
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: template
+    id: light_brightness
+    internal: true
+    lambda: |-
+      auto get_brightness = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(light_brightness_1).state;
+          case 2: return id(light_brightness_2).state;
+          case 3: return id(light_brightness_3).state;
+          case 4: return id(light_brightness_4).state;
+          case 5: return id(light_brightness_5).state;
+          case 6: return id(light_brightness_6).state;
+          case 7: return id(light_brightness_7).state;
+          default: return {};
+        }
+      };
+      return get_brightness(id(current_light_index));
+    on_value:
+      - if:
+          condition:
+            lambda: 'return !std::isnan(x);'
+          then:
+            - globals.set:
+                id: light_current_brightness
+                value: !lambda 'return x;'
+            - lvgl.slider.update:
+                id: light_brightness_slider
+                value: !lambda 'return int(x);'
+            - script.execute: light_update_lightbulb_color
+            - script.execute: light_update_button_icon_color
+  - platform: homeassistant
+    id: light_color_temp_1
+    entity_id: "${light_entity_1}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_color_temp_2
+    entity_id: "${light_entity_2}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_color_temp_3
+    entity_id: "${light_entity_3}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_color_temp_4
+    entity_id: "${light_entity_4}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_color_temp_5
+    entity_id: "${light_entity_5}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_color_temp_6
+    entity_id: "${light_entity_6}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_color_temp_7
+    entity_id: "${light_entity_7}"
+    attribute: color_temp_kelvin
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 7;'
+          then:
+            - sensor.template.publish:
+                id: light_color_temp
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: template
+    id: light_color_temp
+    internal: true
+    lambda: |-
+      auto get_color_temp = [&](int idx) -> optional<float> {
+        switch (idx) {
+          case 1: return id(light_color_temp_1).state;
+          case 2: return id(light_color_temp_2).state;
+          case 3: return id(light_color_temp_3).state;
+          case 4: return id(light_color_temp_4).state;
+          case 5: return id(light_color_temp_5).state;
+          case 6: return id(light_color_temp_6).state;
+          case 7: return id(light_color_temp_7).state;
+          default: return {};
+        }
+      };
+      return get_color_temp(id(current_light_index));
+    on_value:
+      - if:
+          condition:
+            lambda: 'return !std::isnan(x);'
+          then:
+            - globals.set:
+                id: light_current_color_temp
+                value: !lambda 'return x;'
+            - lvgl.arc.update:
+                id: light_arc_color_temp
+                value: !lambda 'return int(x);'
+            - if:
+                condition:
+                  lambda: 'return id(light_is_temp_mode);'
+                then:
+                  - script.execute: light_update_lightbulb_color
+                  - script.execute: light_update_button_icon_color
+
+text_sensor:
+  - platform: homeassistant
+    id: light_name_1
+    entity_id: "${light_entity_1}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_1_stored) = x;
+          ESP_LOGD("light_name", "Stored light 1 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_name_2
+    entity_id: "${light_entity_2}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_2_stored) = x;
+          ESP_LOGD("light_name", "Stored light 2 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_name_3
+    entity_id: "${light_entity_3}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_3_stored) = x;
+          ESP_LOGD("light_name", "Stored light 3 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_name_4
+    entity_id: "${light_entity_4}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_4_stored) = x;
+          ESP_LOGD("light_name", "Stored light 4 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_name_5
+    entity_id: "${light_entity_5}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_5_stored) = x;
+          ESP_LOGD("light_name", "Stored light 5 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_name_6
+    entity_id: "${light_entity_6}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_6_stored) = x;
+          ESP_LOGD("light_name", "Stored light 6 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_name_7
+    entity_id: "${light_entity_7}"
+    attribute: friendly_name
+    on_value:
+      - lambda: |-
+          id(light_name_7_stored) = x;
+          ESP_LOGD("light_name", "Stored light 7 name: %s", x.c_str());
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 7;'
+          then:
+            - lvgl.label.update:
+                id: light_name_label
+                text: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_hs_color_1
+    entity_id: "${light_entity_1}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_hs_color_2
+    entity_id: "${light_entity_2}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_hs_color_3
+    entity_id: "${light_entity_3}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_hs_color_4
+    entity_id: "${light_entity_4}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_hs_color_5
+    entity_id: "${light_entity_5}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_hs_color_6
+    entity_id: "${light_entity_6}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: homeassistant
+    id: light_hs_color_7
+    entity_id: "${light_entity_7}"
+    attribute: hs_color
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 7;'
+          then:
+            - text_sensor.template.publish:
+                id: light_hs_color
+                state: !lambda 'return x;'
+            - script.execute: light_update_all_selector_icons
+  - platform: template
+    id: light_hs_color
+    internal: true
+    lambda: |-
+      auto get_hs = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(light_hs_color_1).state;
+          case 2: return id(light_hs_color_2).state;
+          case 3: return id(light_hs_color_3).state;
+          case 4: return id(light_hs_color_4).state;
+          case 5: return id(light_hs_color_5).state;
+          case 6: return id(light_hs_color_6).state;
+          case 7: return id(light_hs_color_7).state;
+          default: return "";
+        }
+      };
+      return get_hs(id(current_light_index));
+    on_value:
+      - if:
+          condition:
+            lambda: 'return x != "None" && !x.empty();'
+          then:
+            - lambda: |-
+                std::string s = x;
+                size_t start = s.find('(') + 1;
+                size_t comma = s.find(',');
+                size_t end = s.find(')');
+                float hue = 0.0, sat = 0.0;
+                if (start < comma && comma < end) {
+                  hue = atof(s.substr(start, comma - start).c_str());
+                  sat = atof(s.substr(comma + 1, end - comma - 1).c_str());
+                }
+                id(light_current_hue) = hue;
+                id(light_current_saturation) = sat;
+            - lvgl.arc.update:
+                id: light_arc_hue
+                value: !lambda 'return id(light_current_hue);'
+            - if:
+                condition:
+                  lambda: |-
+                    return !id(light_is_temp_mode) &&
+                           (id(light_supports_hs) || id(light_supports_rgb));
+                then:
+                  - lvgl.slider.update:
+                      id: light_saturation_slider
+                      value: !lambda 'return id(light_current_saturation);'
+            - if:
+                condition:
+                  lambda: 'return !id(light_is_temp_mode);'
+                then:
+                  - script.execute: light_update_lightbulb_color
+                  - script.execute: light_update_button_icon_color
+  - platform: homeassistant
+    id: light_supported_modes_1
+    entity_id: "${light_entity_1}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_1_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_1_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_1_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_1_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_1_supports_hs) ||
+            id(light_1_supports_rgb) ||
+            id(light_1_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 1 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_1_supports_color_temp), id(light_1_supports_hs),
+                   id(light_1_supports_rgb), id(light_1_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 1;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_supported_modes_2
+    entity_id: "${light_entity_2}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_2_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_2_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_2_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_2_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_2_supports_hs) ||
+            id(light_2_supports_rgb) ||
+            id(light_2_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 2 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_2_supports_color_temp), id(light_2_supports_hs),
+                   id(light_2_supports_rgb), id(light_2_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 2;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_supported_modes_3
+    entity_id: "${light_entity_3}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_3_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_3_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_3_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_3_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_3_supports_hs) ||
+            id(light_3_supports_rgb) ||
+            id(light_3_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 3 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_3_supports_color_temp), id(light_3_supports_hs),
+                   id(light_3_supports_rgb), id(light_3_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 3;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_supported_modes_4
+    entity_id: "${light_entity_4}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_4_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_4_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_4_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_4_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_4_supports_hs) ||
+            id(light_4_supports_rgb) ||
+            id(light_4_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 4 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_4_supports_color_temp), id(light_4_supports_hs),
+                   id(light_4_supports_rgb), id(light_4_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 4;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_supported_modes_5
+    entity_id: "${light_entity_5}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_5_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_5_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_5_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_5_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_5_supports_hs) ||
+            id(light_5_supports_rgb) ||
+            id(light_5_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 5 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_5_supports_color_temp), id(light_5_supports_hs),
+                   id(light_5_supports_rgb), id(light_5_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 5;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_supported_modes_6
+    entity_id: "${light_entity_6}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_6_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_6_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_6_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_6_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_6_supports_hs) ||
+            id(light_6_supports_rgb) ||
+            id(light_6_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 6 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_6_supports_color_temp), id(light_6_supports_hs),
+                   id(light_6_supports_rgb), id(light_6_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 6;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: homeassistant
+    id: light_supported_modes_7
+    entity_id: "${light_entity_7}"
+    attribute: supported_color_modes
+    internal: true
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_7_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_7_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_7_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_7_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_7_supports_hs) ||
+            id(light_7_supports_rgb) ||
+            id(light_7_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Light 7 modes: temp=%d hs=%d rgb=%d bright=%d",
+                   id(light_7_supports_color_temp), id(light_7_supports_hs),
+                   id(light_7_supports_rgb), id(light_7_supports_brightness));
+      - if:
+          condition:
+            lambda: 'return id(current_light_index) == 7;'
+          then:
+            - text_sensor.template.publish:
+                id: light_supported_modes
+                state: !lambda 'return x;'
+  - platform: template
+    id: light_supported_modes
+    internal: true
+    lambda: |-
+      auto get_modes = [&](int idx) -> std::string {
+        switch (idx) {
+          case 1: return id(light_supported_modes_1).state;
+          case 2: return id(light_supported_modes_2).state;
+          case 3: return id(light_supported_modes_3).state;
+          case 4: return id(light_supported_modes_4).state;
+          case 5: return id(light_supported_modes_5).state;
+          case 6: return id(light_supported_modes_6).state;
+          case 7: return id(light_supported_modes_7).state;
+          default: return "";
+        }
+      };
+      return get_modes(id(current_light_index));
+    on_value:
+      - lambda: |-
+          std::string modes = x;
+          id(light_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          id(light_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(light_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          id(light_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(light_supports_hs) ||
+            id(light_supports_rgb) ||
+            id(light_supports_color_temp)
+          );
+          ESP_LOGD("light_widget", "Supported modes parsed for index %d", id(current_light_index));
+          if (!id(light_initial_load_complete)) {
+            id(light_initial_load_complete) = true;
+          }
+          id(light_update_layout).execute();

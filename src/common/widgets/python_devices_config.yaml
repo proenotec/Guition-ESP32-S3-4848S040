@@ -2,7 +2,7 @@
 # USAGE INSTRUCTIONS
 # ============================================
 # Python generator (Fully automated)
-# - Edit only devices_config.yaml
+# - Edit only this python_devices_config.yaml file
 # - Run: python generate_handler.py
 # - Script auto-generates devices_list.yaml and devices_handler.yaml
 # - devices.yaml includes these generated files
@@ -10,8 +10,8 @@
 # - Pro: Add to your build process or pre-commit hook
 
 # Add to your ESPHome workflow:
-# 1. Edit devices_config.yaml
-# 2. Run generate_handler.py
+# 1. Edit python_devices_config.yaml
+# 2. Run python_generate_handler_xxxx.py (roller or button)
 # 3. Compile ESPHome configuration
 
 widgets:
