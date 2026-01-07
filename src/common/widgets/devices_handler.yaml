@@ -28,3 +28,13 @@
       lambda: return x == id(btn_texto);
     then:
     - lvgl.page.show: texto_page
+- if:
+    condition:
+      lambda: return x == id(btn_locks);
+    then:
+    - lvgl.page.show: locks_page
+- if:
+    condition:
+      lambda: return x == id(btn_gate);
+    then:
+    - lvgl.page.show: gate_page

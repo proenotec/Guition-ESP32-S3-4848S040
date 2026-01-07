@@ -27,3 +27,7 @@ widgets:
     page: fan_page
   - name: "Texto"
     page: texto_page
+  - name: "Locks"
+    page: locks_page
+  - name: "Gate"
+    page: gate_page

@@ -11,20 +11,19 @@
       Thermostat
 
       '
-- buttons:
   - id: btn_vacuum
     text: '
 
       Vacuum
 
       '
+- buttons:
   - id: btn_cover
     text: '
 
       Cover
 
       '
-- buttons:
   - id: btn_fan
     text: '
 
@@ -37,3 +36,19 @@
       Texto
 
       '
+- buttons:
+  - id: btn_locks
+    text: '
+
+      Locks
+
+      '
+  - id: btn_gate
+    text: '
+
+      Gate
+
+      '
+  - text: ''
+    control:
+      hidden: true

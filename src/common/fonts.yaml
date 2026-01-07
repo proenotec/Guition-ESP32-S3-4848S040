@@ -1,4 +1,19 @@
 # TEXT FONT
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_12
+  size: 12
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+#    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_14
+  size: 14
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_16
@@ -6,7 +21,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
   glyphs: "²"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
@@ -15,7 +30,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_20
@@ -23,11 +38,27 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_24
+  size: 24
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_30
   size: 30
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+#    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_32
+  size: 32
   bpp: 4
   glyphsets:
     - GF_Latin_Core
@@ -39,7 +70,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_48
@@ -47,7 +78,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_56
@@ -55,7 +86,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_64
@@ -63,7 +94,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_84
@@ -71,7 +102,7 @@
   bpp: 4
   glyphsets:
     - GF_Latin_Core
-    - GF_Cyrillic_Core
+#    - GF_Cyrillic_Core
 
 # CUSTOM ICONS FONT
 
@@ -400,6 +431,18 @@
 #    "\U000F1C92", # swing off
 #    "\U000F1B29", # faucet
 #    "\U000F0E47", # hand
+  ]
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_32
+  size: 32
+  bpp: 4
+  glyphs: [
+    "\U000F0D83",  # fence
+    "\U000F0343",  # gate-arrow-left
+    "\U000F033E",  # lock
+    "\U000F033F",  # lock-open
+    "\U000F05CE",  # lock-clock
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"

@@ -470,7 +470,7 @@ lvgl:
 
               # Lock status
               - label:
-                  id: lock_status
+                  id: lock_label
                   align: left_mid
                   x: 100
                   text: "${lock_icon}"
@@ -1934,7 +1934,7 @@ script:
                 format: "✅ UNLOCKING - Setting buttons to clickable"
                 level: INFO
             - lvgl.label.update:
-                id: lock_status
+                id: lock_label
                 text_color: 0x5CA848
             - lvgl.label.update:
                 id: display_lock_indicator
@@ -1971,7 +1971,7 @@ script:
                 format: "🔒 LOCKING - Setting buttons to non-clickable"
                 level: INFO
             - lvgl.label.update:
-                id: lock_status
+                id: lock_label
                 text_color: 0xFF0000
             - lvgl.label.update:
                 id: display_lock_indicator
