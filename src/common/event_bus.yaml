@@ -1,0 +1,74 @@
+# ============================================================
+# common/event_bus.yaml - VERSIÓN CON UPDATE FORZADO
+# ============================================================
+
+globals:
+  - id: event_door_window_changed
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+  - id: event_temperature_changed
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+  - id: event_hvac_action_changed
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+  - id: last_event_source
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+script:
+  - id: publish_event
+    parameters:
+      event_type: string
+      source: string
+    then:
+      - lambda: |-
+          id(last_event_source) = source;
+
+          if (event_type == "door_window") {
+            id(event_door_window_changed)++;
+            ESP_LOGD("EventBus", "✅ door_window from %s (counter: %d)",
+                     source.c_str(), id(event_door_window_changed));
+
+            // FORZAR update del sensor template
+            auto sub = id(thermostat_door_window_subscriber);
+            if (sub != nullptr) {
+              sub->publish_state(id(event_door_window_changed));
+              ESP_LOGD("EventBus", "   → Forced update to thermostat_door_window_subscriber");
+            }
+
+            auto sub2 = id(texto_door_window_subscriber);
+            if (sub2 != nullptr) {
+              sub2->publish_state(id(event_door_window_changed));
+              ESP_LOGD("EventBus", "   → Forced update to texto_door_window_subscriber");
+            }
+
+          } else if (event_type == "temperature") {
+            id(event_temperature_changed)++;
+            ESP_LOGD("EventBus", "✅ temperature from %s (counter: %d)",
+                     source.c_str(), id(event_temperature_changed));
+
+            auto sub = id(texto_temperature_subscriber);
+            if (sub != nullptr) {
+              sub->publish_state(id(event_temperature_changed));
+              ESP_LOGD("EventBus", "   → Forced update to texto_temperature_subscriber");
+            }
+
+          } else if (event_type == "hvac_action") {
+            id(event_hvac_action_changed)++;
+            ESP_LOGD("EventBus", "✅ hvac_action from %s (counter: %d)",
+                     source.c_str(), id(event_hvac_action_changed));
+
+            auto sub = id(thermostat_hvac_subscriber);
+            if (sub != nullptr) {
+              sub->publish_state(id(event_hvac_action_changed));
+              ESP_LOGD("EventBus", "   → Forced update to thermostat_hvac_subscriber");
+            }
+          }

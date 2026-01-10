@@ -27,7 +27,7 @@ substitutions:
   temp_icon_4: "\U000F081C"  # mdi:door-open
 
   # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
-  log_level: "DEBUG"
+  log_level: "WARN"
 
 
   # SETTINGS

@@ -16,17 +16,26 @@ lvgl:
       <<: !include
         file: ../../widgets/swipe_navigation.yaml
       on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "texto_page"
+
+        # Inicialización específica
+        - lambda: |-
+            id(texto_page_climate_index) = 0;
+
+        - if:
+            condition:
+              lambda: 'return id(display_backlight)->remote_values.is_on();'
+            then:
+              - script.execute: cycle_texto_page_climates
         - lvgl.label.update:
             id: texto_label1
             text: !lambda 'return id(texto1_ha).state.c_str();'
         - lvgl.label.update:
             id: texto_label2
             text: !lambda 'return id(texto1_thread).state.c_str();'
-        - lambda: |-
-            id(active_lvgl_page) = "texto_page";
-            // Primer climate
-            id(texto_page_climate_index) = 0;
-        # NEW: Check if we should start the cycle script
         - if:
             condition:
               lambda: |-
@@ -199,6 +208,9 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "texto_page"
               - lvgl.page.show: home_page
 
 binary_sensor:
@@ -212,27 +224,79 @@ binary_sensor:
     id: acs_heating
     internal: true
 
-  - platform: homeassistant
-    entity_id: input_boolean.living_room_windows
-    id: salon_windows
-    internal: true
+# ============================================================
+# EJEMPLO: Cómo otros módulos publican eventos
+# ============================================================
 
-  - platform: homeassistant
-    entity_id: binary_sensor.maindoor_contact
-    id: maindoor_status
-    internal: true
+# En cualquier sensor de temperatura:
+#sensor:
+#  - platform: homeassistant
+#    entity_id: sensor.atc_f7ba_temperature
+#    id: gt_temp
+#    internal: true
+#    on_value:
+#      - script.execute:
+#          id: publish_event
+#          event_type: "temperature"
+#          source: "gt_temp"
 
-  - platform: homeassistant
-    entity_id: binary_sensor.maindormwnd_contact
-    id: maindorm_window
-    internal: true
+# En cualquier text_sensor de HVAC:
+#text_sensor:
+#  - platform: homeassistant
+#    id: thermostat_sensor_hvac_action_1
+#    entity_id: "${thermo_entity_1}"
+#    attribute: hvac_action
+#    internal: true
+#    on_value:
+#      - script.execute:
+#          id: publish_event
+#          event_type: "hvac_action"
+#          source: "thermostat_1"
+      # ... resto de tu lógica
 
-  - platform: homeassistant
-    entity_id: binary_sensor.bathroomwnd_contact
-    id: bathroom_window
-    internal: true
+# ============================================================
+# VENTAJAS DE ESTE SISTEMA:
+# ============================================================
+# 1. Desacoplamiento total: doors.yaml no conoce thermostat ni texto
+# 2. Escalable: Añadir nuevos suscriptores es trivial
+# 3. Debuggeable: Todos los eventos pasan por un punto central
+# 4. Flexible: Cada módulo decide cuándo y cómo reaccionar
+# 5. Sin duplicación: La lógica de negocio está en el suscriptor
+
+# ============================================================
+# texto.yaml - SUSCRIPTOR
+# ============================================================
 
 sensor:
+  - platform: template
+    id: texto_door_window_subscriber
+    internal: true
+    on_value:
+      - lambda: |-
+          ESP_LOGD("texto_sub", "🔔 Event received! Counter: %.0f", x);
+          ESP_LOGD("texto_sub", "   Page: %s, Running: %s",
+                   id(active_lvgl_page).c_str(),
+                   id(cycle_texto_page_climates).is_running() ? "YES" : "NO");
+      - if:
+          condition:
+            and:
+              - lambda: 'return id(active_lvgl_page) == "texto_page";'
+              - lambda: 'return id(cycle_texto_page_climates).is_running();'
+          then:
+            - logger.log: "✅ Texto: Processing door/window event"
+
+  - platform: template
+    id: texto_temperature_subscriber
+    internal: true
+    on_value:
+      - lambda: |-
+          ESP_LOGD("texto_temp", "🔔 Temp event! Counter: %.0f", x);
+      - if:
+          condition:
+            lambda: 'return id(active_lvgl_page) == "texto_page";'
+          then:
+            - logger.log: "✅ Texto: Processing temperature event"
+
   - platform: homeassistant
     entity_id: weather.forecast_home
     attribute: temperature
@@ -345,12 +409,15 @@ script:
       - text_sensor.template.publish:
           id: clear_texto_command
           state: clearing
+      - script.execute:
+          id: page_cleanup
+          page_name: "texto_page"
       - lvgl.page.show: home_page
       - delay: 500ms
       - text_sensor.template.publish:
           id: clear_texto_command
           state: acknowledged
-      - lambda: ESP_LOGI("clear_texto", "Limpieza completada y reconocida");
+      - lambda: ESP_LOGD("clear_texto", "Limpieza completada y reconocida");
 
   # Script para ciclar climates en texto_page
   - id: cycle_texto_page_climates
@@ -361,7 +428,7 @@ script:
       # === CRITICAL FIX: Reset countdown_progress FIRST ===
       - lambda: |-
           id(countdown_progress) = 0;
-          ESP_LOGI("cycle_texto_page_climates", "Reset countdown_progress to: %d", id(countdown_progress));
+          ESP_LOGD("cycle_texto_page_climates", "Reset countdown_progress to: %d", id(countdown_progress));
 
       - delay: 200ms  # NEW: Give LVGL time to fully resume and stabilize
 
@@ -380,7 +447,7 @@ script:
             - light.is_on: display_backlight
           then:
             - lambda: |-
-                ESP_LOGI("cycle_texto_page_climates", "countdown_progress: %d", id(countdown_progress));
+                ESP_LOGD("cycle_texto_page_climates", "countdown_progress: %d", id(countdown_progress));
                 // Arrays con la información de los climates
                 static const char* climate_labels[] = {"SALON", "BATHR.", "BEDROOM", "PASILLO", "ACS", "OTHER"};
                 static const char* window_icons[] = {"\U000F11DB", "\U000F11DC"};
@@ -389,7 +456,7 @@ script:
                 static char buf[35];
 
                 int idx = id(texto_page_climate_index);
-                ESP_LOGI("cycle_texto_page_climates", "idx: %d", idx);
+                ESP_LOGD("cycle_texto_page_climates", "idx: %d", idx);
 
                 float current_temp = NAN;
                 float set_temp = NAN;
@@ -446,7 +513,7 @@ script:
                   } else {
                     lv_obj_set_style_text_color(id(texto_page_window_label), lv_color_hex(0x9E9E9E), 0);
                   }
-                  ESP_LOGI("window_icons", "current_icon: %d", current_icon);
+                  ESP_LOGD("window_icons", "current_icon: %d", current_icon);
                   lv_label_set_text(id(texto_page_window_label), window_icons[current_icon]);
 
                   // Actualizar el label de heating on/off
@@ -457,7 +524,7 @@ script:
                     current_icon = 1;
                   }
 
-                  ESP_LOGI("heating_icons", "current_icon: %d", current_icon);
+                  ESP_LOGD("heating_icons", "current_icon: %d", current_icon);
                   lv_label_set_text(id(texto_page_heat_label), heating_icons[current_icon]);
 
                   // cambiar color según estado
@@ -502,7 +569,7 @@ script:
 
                   if (id(acs_heating).state)
                     current_icon = 1;
-                  ESP_LOGI("heating_icons", "current_icon: %d", current_icon);
+                  ESP_LOGD("heating_icons", "current_icon: %d", current_icon);
                   lv_label_set_text(id(texto_page_heat_label), heating_icons[current_icon]);
 
                   // Opcional: cambiar color según estado
@@ -567,17 +634,17 @@ script:
                         id(countdown_progress) = 0;
                       }
 
-                      ESP_LOGI("cycle_texto_page_climates", "countdown_progress before increment: %d", id(countdown_progress));
+                      ESP_LOGD("cycle_texto_page_climates", "countdown_progress before increment: %d", id(countdown_progress));
                       id(countdown_progress)++;
 
                       // Calculate percentage (100% -> 0%)
                       int pct = 100 - ((id(countdown_progress) * 100) / 5);
-                      ESP_LOGI("cycle_texto_page_climates", "Setting bar to: %d%%", pct);
+                      ESP_LOGD("cycle_texto_page_climates", "Setting bar to: %d%%", pct);
                       lv_bar_set_value(id(countdown_text_progress_bar), pct, LV_ANIM_OFF);
 
             # Reset for next cycle
             - lambda: |-
-                ESP_LOGI("cycle_texto_page_climates", "Resetting countdown_progress from %d to 0", id(countdown_progress));
+                ESP_LOGD("cycle_texto_page_climates", "Resetting countdown_progress from %d to 0", id(countdown_progress));
                 id(countdown_progress) = 0;
             # - delay: 5s  # Esperar 5 segundos antes de mostrar el siguiente
       - logger.log: "cycle_texto_page_climates Stopped"

@@ -1,10 +1,23 @@
 - buttons:
+  - id: btn_cover
+    text: '
+
+      Cover
+
+      '
   - id: btn_info
     text: '
 
       Info
 
       '
+  - id: btn_texto
+    text: '
+
+      Texto
+
+      '
+- buttons:
   - id: btn_thermostat
     text: '
 
@@ -17,36 +30,23 @@
       Vacuum
 
       '
-- buttons:
-  - id: btn_cover
-    text: '
-
-      Cover
-
-      '
   - id: btn_fan
     text: '
 
       Fan
 
       '
-  - id: btn_texto
-    text: '
-
-      Texto
-
-      '
 - buttons:
-  - id: btn_locks
-    text: '
-
-      Locks
-
-      '
   - id: btn_gate
     text: '
 
       Gate
+
+      '
+  - id: btn_locks
+    text: '
+
+      Locks
 
       '
   - text: ''

@@ -567,6 +567,10 @@ lvgl:
       bg_color: color_black
       scrollable: false
       on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "cover_page"
         - lambda: |-
             int covers = ${covers_amount};
             if (covers >= 2) {
@@ -960,6 +964,9 @@ lvgl:
                   radius: 15
             on_click:
               - lvgl.widget.hide: cover_select_widget
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "cover_page"
               - lvgl.page.show: home_page
 
 script:

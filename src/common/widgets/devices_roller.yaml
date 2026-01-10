@@ -4,6 +4,11 @@ lvgl:
   pages:
     - id: devices_page
       bg_color: color_black
+      on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "devices_page"
       widgets:
         # Title label
         - label:
@@ -57,4 +62,7 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "devices_page"
               - lvgl.page.show: home_page

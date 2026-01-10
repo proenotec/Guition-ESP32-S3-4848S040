@@ -867,6 +867,10 @@ lvgl:
       bg_color: color_black
       scrollable: false
       on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "fan_page"
         - lambda: |-
             int fans = ${fans_amount};
             if (fans >= 2) {
@@ -1480,6 +1484,9 @@ lvgl:
                   radius: 15
             on_click:
               - lvgl.widget.hide: fan_select_widget
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "fan_page"
               - lvgl.page.show: home_page
 
 script:

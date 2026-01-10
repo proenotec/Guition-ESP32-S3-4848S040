@@ -2,6 +2,11 @@ lvgl:
   pages:
     - id: info_page
       bg_color: color_black
+      on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "info_page"
       <<: !include
         file: ../../widgets/swipe_navigation.yaml
       widgets:
@@ -75,6 +80,9 @@ lvgl:
                                     service: script.turn_on
                                     data:
                                       entity_id: "script.rain_notification_for_the_day"
+                                - script.execute:
+                                    id: page_cleanup
+                                    page_name: "info_page"
                                 - lvgl.page.show: home_page
 
                           # Script Button 2
@@ -138,25 +146,6 @@ lvgl:
                         width: 100%
                         height: 5
 
-              # === BOTÓN CERRAR (Posicionado Absolutamente) ===
-  #            - button:
-  #                id: boot_screen_home_button
-  #                x: -5
-  #                y: 5
-  #                align: TOP_RIGHT
-  #                width: 35
-  #                height: 35
-  #                bg_color: color_slate_blue_gray
-  #                radius: 10
-  #                widgets:
-  #                  - label:
-  #                      text: ${home_icon}
-  #                      align: CENTER
-  #                      text_font: icons_28
-  #                      text_color: color_misty_blue
-  #                on_click:
-  #                  - lvgl.page.show: home_page
-
         # BACK
         - obj:
             y: 0
@@ -182,5 +171,8 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "info_page"
               - lvgl.page.show: home_page
 

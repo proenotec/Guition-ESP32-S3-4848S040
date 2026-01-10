@@ -15,19 +15,19 @@
 # 3. Compile ESPHome configuration
 
 widgets:
+  - name: "Cover"
+    page: cover_page
   - name: "Info"
     page: info_page
+  - name: "Texto"
+    page: texto_page
   - name: "Thermostat"
     page: therm_page
   - name: "Vacuum"
     page: vacuum_page
-  - name: "Cover"
-    page: cover_page
   - name: "Fan"
     page: fan_page
-  - name: "Texto"
-    page: texto_page
-  - name: "Locks"
-    page: locks_page
   - name: "Gate"
     page: gate_page
+  - name: "Locks"
+    page: locks_page

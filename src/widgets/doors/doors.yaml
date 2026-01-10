@@ -1,0 +1,44 @@
+# ============================================================
+# doors.yaml - SOLO publica eventos
+# ============================================================
+
+binary_sensor:
+  - platform: homeassistant
+    entity_id: input_boolean.living_room_windows
+    id: salon_windows
+    internal: true
+    on_state:
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "salon_windows"
+
+  - platform: homeassistant
+    entity_id: binary_sensor.maindoor_contact
+    id: maindoor_status
+    internal: true
+    on_state:
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "maindoor"
+
+  - platform: homeassistant
+    entity_id: binary_sensor.maindormwnd_contact
+    id: maindorm_window
+    internal: true
+    on_state:
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "maindorm_window"
+
+  - platform: homeassistant
+    entity_id: binary_sensor.bathroomwnd_contact
+    id: bathroom_window
+    internal: true
+    on_state:
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "bathroom_window"

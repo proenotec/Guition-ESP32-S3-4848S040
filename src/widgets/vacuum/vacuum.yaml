@@ -110,9 +110,13 @@ lvgl:
   pages:
     - id: vacuum_page
       bg_color: color_black
+      on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "vacuum_page"
       skip: true
       widgets:
-
         - obj:
             y: 20
             width: 440
@@ -186,7 +190,7 @@ lvgl:
                         align: center
                         text_font: nunito_18
                         text_color: color_misty_blue
-                        text: "0 m²"
+                        text: "0 m2"
 
               - label:
                   id: vacuum_state_label
@@ -623,8 +627,10 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "vacuum_page"
               - lvgl.page.show: home_page
-
 
 script:
 

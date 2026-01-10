@@ -1,0 +1,57 @@
+# ============================================================
+# common/page_manager.yaml (OPCIONAL - Mejora arquitectónica)
+# ============================================================
+# Este sistema centraliza el cambio de páginas y facilita:
+# - Logging consistente
+# - Acciones al salir de una página
+# - Acciones al entrar en una página
+# - Hooks para cleanup/init
+# ============================================================
+
+globals:
+  - id: active_lvgl_page
+    type: std::string
+    restore_value: false
+    initial_value: '"home_page"'
+
+  - id: previous_lvgl_page
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+script:
+  # ============================================================
+  # Script para cambiar de página de forma centralizada
+  # ============================================================
+  - id: set_active_page
+    parameters:
+      page_name: string
+    then:
+      - lambda: |-
+          // Guardar página anterior para historial
+          id(previous_lvgl_page) = id(active_lvgl_page);
+
+          // Actualizar página activa
+          id(active_lvgl_page) = page_name;
+
+          ESP_LOGD("PageManager", "Page changed: %s → %s",
+                   id(previous_lvgl_page).c_str(),
+                   id(active_lvgl_page).c_str());
+
+  # ============================================================
+  # Script para cleanup al salir de una página
+  # ============================================================
+  - id: page_cleanup
+    parameters:
+      page_name: string
+    then:
+      - lambda: |-
+          ESP_LOGD("PageManager", "Cleanup for page: %s", page_name.c_str());
+
+          // Ejemplo: Detener scripts específicos de cada página
+          if (page_name == "texto_page") {
+            if (id(cycle_texto_page_climates).is_running()) {
+              id(cycle_texto_page_climates).stop();
+            }
+          }
+          // Añadir más cleanups según necesites

@@ -176,6 +176,10 @@ def generate_light_ui(substitutions):
                 'id': 'light_control_page',
                 'bg_color': 'color_slate_blue_gray',
                 'on_load': [
+                            # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "light_control_page"
                     {'script.execute': 'light_update_layout'},
                     {'delay': '200ms'},
                     {'script.execute': 'light_update_lightbulb_color'},
@@ -636,9 +640,12 @@ def generate_light_ui(substitutions):
                                 }
                             }],
                             'on_click': [
-                                {'lvgl.widget.hide': 'light_select_widget'},
-                                {'delay': '100ms'},
-                                {'lvgl.page.show': 'home_page'}
+                                {  'lvgl.widget.hide': 'light_select_widget'},
+                                {  'delay': '100ms'},
+            - script.execute:
+                id: page_cleanup
+                page_name: "texto_page"
+                                {  'lvgl.page.show': 'home_page'}
                             ]
                         }
                     }

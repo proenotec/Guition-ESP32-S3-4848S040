@@ -55,7 +55,41 @@ globals:
     initial_value: '10'
     restore_value: no
 
+# ============================================================
+# thermostat.yaml - SUSCRIPTOR
+# ============================================================
+
 sensor:
+  - platform: template
+    id: thermostat_door_window_subscriber
+    internal: true
+    # NO LAMBDA - se actualiza via publish_state()
+    on_value:
+      - lambda: |-
+          ESP_LOGD("thermostat_sub", "🔔 Event received! Counter: %.0f", x);
+          ESP_LOGD("thermostat_sub", "   Page: %s, Source: %s",
+                   id(active_lvgl_page).c_str(), id(last_event_source).c_str());
+      - if:
+          condition:
+            lambda: 'return id(active_lvgl_page) == "therm_page";'
+          then:
+            - logger.log: "✅ Calling update_thermostat_window_display"
+            - script.execute: update_thermostat_window_display
+          else:
+            - logger.log: "⚠️ Not on therm_page, ignoring"
+
+  - platform: template
+    id: thermostat_hvac_subscriber
+    internal: true
+    on_value:
+      - lambda: |-
+          ESP_LOGD("thermostat_hvac", "🔔 HVAC event! Counter: %.0f", x);
+      - if:
+          condition:
+            lambda: 'return id(active_lvgl_page) == "therm_page";'
+          then:
+            - logger.log: "✅ Handling HVAC event"
+
   # Template aggregators for shared UI updates (reactive to specific sensor changes when index matches)
   - platform: template
     id: thermostat_sensor_target_temp
@@ -168,7 +202,7 @@ sensor:
           else { chosen = 0.5f; m = 2; }
           id(thermostat_temp_step) = chosen;
           id(thermostat_temp_step_multiplier) = m;
-          ESP_LOGI("ARC_STEP","target_temp_step=%.3f -> multiplier=%d", chosen, m);
+          ESP_LOGD("ARC_STEP","target_temp_step=%.3f -> multiplier=%d", chosen, m);
           if (id(thermostat_arc_range_initialized)) {
             id(thermostat_arc_range_initialized) = false;
             id(thermostat_update_arc_temp_range).execute();
@@ -1083,6 +1117,12 @@ lvgl:
     - id: therm_page
       bg_color: color_slate_blue_gray
       on_load:
+        - script.execute:
+            id: set_active_page
+            page_name: "therm_page"
+        - script.execute:
+            id: cycle_climate
+            position: 1
         - lambda: |-
             int num_climates = ${climates_amount};
             if (num_climates >= 2) {
@@ -1097,8 +1137,8 @@ lvgl:
         # Climate name label (updated via script)
         - label:
             id: thermostat_name_label
-            y: -30
             x: 0
+            y: -30
             height: 40
             width: 240
             long_mode: dot
@@ -1135,34 +1175,6 @@ lvgl:
               flex_align_cross: center
               flex_align_track: center
             widgets:
-              # Auto button
-              - obj:
-                  id: thermostat_auto_mode_btn
-                  width: 54
-                  height: 54
-                  pad_all: 0
-                  radius: 30
-                  bg_opa: transp
-                  border_opa: transp
-                  shadow_width: 5
-                  shadow_spread: 1
-                  shadow_color: color_black
-                  pressed:
-                    bg_color: color_black
-                    shadow_width: 4
-                  widgets:
-                    - label:
-                        id: thermostat_auto_mode_label
-                        align: center
-                        text_font: mdi_icons_28
-                        text_color: color_misty_blue
-                        text: "\U000F0A9E"
-                  on_press:
-                    - homeassistant.action:
-                        action: climate.set_hvac_mode
-                        data:
-                          entity_id: !lambda 'return id(current_climate_entity);'
-                          hvac_mode: auto
               # Heat button
               - obj:
                   id: thermostat_heat_mode_btn
@@ -1380,210 +1392,6 @@ lvgl:
                         data:
                           entity_id: !lambda return id(current_climate_entity);
                           preset_mode: away
-
-              # 7. BOOST (if applicable)
-              - obj:
-                  id: thermostat_boost_preset_btn
-                  hidden: true
-                  width: 35
-                  height: 35
-                  pad_all: 0
-                  bg_opa: TRANSP
-                  border_opa: TRANSP
-                  shadow_opa: TRANSP
-                  widgets:
-                    - label:
-                        id: thermostat_boost_preset_label
-                        align: CENTER
-                        text_font: mdi_icons_24
-                        text_color: color_misty_blue
-                        text: "${boost_preset_icon}"
-                  on_press:
-                    - homeassistant.action:
-                        action: climate.set_preset_mode
-                        data:
-                          entity_id: !lambda return id(current_climate_entity);
-                          preset_mode: boost
-
-#        # Presets container (buttons shown/hidden via script)
-#        - obj:
-#            id: thermostat_controls_presets
-#            x: 100
-#            y: 80
-#            width: 80
-#            height: 340
-#            align: top_left
-#            pad_all: 3
-#            bg_opa: transp
-#            border_opa: transp
-#            border_width: 0
-#            shadow_opa: transp
-#            layout:
-#              type: flex
-#              flex_align_cross: center
-#              flex_align_track: center
-#            widgets:
-#              # Eco button
-#              - obj:
-#                  id: thermostat_eco_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_eco_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${eco_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: eco
-#              # Away button
-#              - obj:
-#                  id: thermostat_away_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_away_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${away_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: away
-#              # Boost button
-#              - obj:
-#                  id: thermostat_boost_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_boost_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${boost_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: boost
-#              # Comfort button
-#              - obj:
-#                  id: thermostat_comfort_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_comfort_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${comfort_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: comfort
-#              # Home button
-#              - obj:
-#                  id: thermostat_home_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_home_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${home_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: home
-#              # Sleep button
-#              - obj:
-#                  id: thermostat_sleep_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_sleep_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${sleep_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: sleep
-#              # Activity button
-#              - obj:
-#                  id: thermostat_activity_preset_btn
-#                  hidden: true
-#                  width: 35
-#                  height: 35
-#                  pad_all: 0
-#                  bg_opa: transp
-#                  border_opa: transp
-#                  shadow_opa: transp
-#                  widgets:
-#                    - label:
-#                        id: thermostat_activity_preset_label
-#                        align: center
-#                        text_font: mdi_icons_24
-#                        text_color: color_misty_blue
-#                        text: "${activity_preset_icon}"
-#                  on_press:
-#                    - homeassistant.action:
-#                        action: climate.set_preset_mode
-#                        data:
-#                          entity_id: !lambda 'return id(current_climate_entity);'
-#                          preset_mode: activity
 
         # Main temperature widget (arcs, labels)
         - obj:
@@ -1907,37 +1715,6 @@ lvgl:
                         text_color: color_steel_blue
                         text: "°C"
 
-              - obj:
-                  id: thermostat_target_temperature_dual
-                  hidden: true
-                  scrollable: false
-                  width: 140
-                  height: 140
-                  align: right_mid
-                  bg_color: color_slate_blue_gray
-                  pad_all: 0
-                  border_opa: transp
-                  border_width: 0
-                  shadow_opa: transp
-                  layout:
-                    type: flex
-                    pad_row: 0
-                    flex_align_cross: center
-                    flex_align_track: center
-                  widgets:
-                    # Heat target low
-                    - label:
-                        id: thermostat_target_low_whole
-                        text_font: nunito_48
-                        text_color: color_steel_blue
-                        text: " "
-                    # Heat target high
-                    - label:
-                        id: thermostat_target_high_whole
-                        text_font: nunito_48
-                        text_color: color_steel_blue
-                        text: " "
-
               # Current temp label
               - label:
                   id: thermostat_current_temperature_label
@@ -2011,6 +1788,25 @@ lvgl:
                         text_font: mdi_icons_40
                         text_color: color_misty_blue
                         text: "${plus_icon}"
+        - obj:
+            x: 150
+            y: 0
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              # Window status label (NUEVO)
+              - label:
+                  id: thermostat_window_label
+                  align: center
+                  text_font: mdi_icons_24
+                  text_color: color_misty_blue
+                  text: "\U000F11DB"
+
 
         # Minus button
         - obj:
@@ -2101,6 +1897,9 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "therm_page"
               - lambda: |-
                   lv_obj_add_flag(id(thermo_select_widget), LV_OBJ_FLAG_HIDDEN);
               - lvgl.page.show: home_page
@@ -2130,7 +1929,6 @@ script:
 
           // Show/hide widgets based on mode
           lv_obj_clear_flag(id(thermostat_target_temperature_single), LV_OBJ_FLAG_HIDDEN);
-          lv_obj_add_flag(id(thermostat_target_temperature_dual), LV_OBJ_FLAG_HIDDEN);
 
           if (is_heat) {
             lv_obj_add_flag(id(thermostat_arc_background), LV_OBJ_FLAG_HIDDEN);
@@ -2145,7 +1943,6 @@ script:
             lv_obj_set_style_text_color(id(thermostat_target_temperature_fraction), color_deep_orange, 0);
             lv_obj_set_style_text_color(id(thermostat_target_temperature_measurement), color_deep_orange, 0);
             lv_obj_set_style_text_color(id(thermostat_heat_mode_label), color_deep_orange, 0);
-            lv_obj_set_style_text_color(id(thermostat_auto_mode_label), color_misty_blue, 0);
 
             int m = id(thermostat_temp_step_multiplier);
             int target_scaled = (int)(id(thermostat_sensor_target_temp).state * m + 0.5f);
@@ -2184,7 +1981,6 @@ script:
             lv_obj_set_style_text_color(id(thermostat_target_temperature_fraction), color_misty_blue, 0);
             lv_obj_set_style_text_color(id(thermostat_target_temperature_measurement), color_misty_blue, 0);
             lv_obj_set_style_text_color(id(thermostat_heat_mode_label), color_misty_blue, 0);
-            lv_obj_set_style_text_color(id(thermostat_auto_mode_label), color_misty_blue, 0);
           }
 
           id(thermostat_update_active_arc_layer).execute();
@@ -2222,7 +2018,6 @@ script:
           lv_obj_set_style_text_color(id(thermostat_home_preset_label), color_misty_blue, 0);
           lv_obj_set_style_text_color(id(thermostat_away_preset_label), color_misty_blue, 0);
           lv_obj_set_style_text_color(id(thermostat_comfort_preset_label), color_misty_blue, 0);
-          lv_obj_set_style_text_color(id(thermostat_boost_preset_label), color_misty_blue, 0);
           lv_obj_set_style_text_color(id(thermostat_sleep_preset_label), color_misty_blue, 0);
           lv_obj_set_style_text_color(id(thermostat_activity_preset_label), color_misty_blue, 0);
 
@@ -2232,7 +2027,6 @@ script:
           else if (preset == "home") lv_obj_set_style_text_color(id(thermostat_home_preset_label), color_blue, 0);
           else if (preset == "away") lv_obj_set_style_text_color(id(thermostat_away_preset_label), color_orange, 0);
           else if (preset == "comfort") lv_obj_set_style_text_color(id(thermostat_comfort_preset_label), color_yellow, 0);
-          else if (preset == "boost") lv_obj_set_style_text_color(id(thermostat_boost_preset_label), color_red, 0);
           else if (preset == "sleep") lv_obj_set_style_text_color(id(thermostat_sleep_preset_label), color_dark_blue, 0);
           else if (preset == "activity") lv_obj_set_style_text_color(id(thermostat_activity_preset_label), color_crimson, 0);
 
@@ -2312,7 +2106,7 @@ script:
             if (!name.empty()) {
               lv_label_set_text(id(thermostat_name_label), name.c_str());
             }
-            ESP_LOGI("climate_cycle", "Switched to: %s (%s)", name.c_str(), entities[position - 1]);
+            ESP_LOGD("climate_cycle", "Switched to: %s (%s)", name.c_str(), entities[position - 1]);
 
             // Reset all button backgrounds to transparent
             lv_obj_set_style_bg_opa(id(climate_btn_1), LV_OPA_TRANSP, 0);
@@ -2352,12 +2146,54 @@ script:
           }
       - script.execute: thermostat_cycle_refresh
 
+  - id: update_thermostat_window_display
+    then:
+      - lambda: |-
+          // Obtener el índice actual
+          int idx = id(current_climate_index);
+
+          ESP_LOGD("thermostat", "update_thermostat_window_display for index %d", idx);
+
+          bool window_state = false;
+          int window_icon_idx = 0;
+
+          // Obtener estado según el termostato activo
+          switch(idx) {
+            case 1: // Salón
+              window_state = id(salon_windows).state;
+              break;
+            case 2: // Baño
+              window_state = id(bathroom_window).state;
+              break;
+            case 3: // Dormitorio
+              window_state = id(maindorm_window).state;
+              break;
+            case 4: // Pasillo
+              window_state = id(maindoor_status).state;
+              break;
+          }
+
+          // Actualizar icono y color
+          if (window_state) {
+            lv_obj_set_style_text_color(id(thermostat_window_label), lv_color_hex(0xFF6B35), 0); // naranja
+            window_icon_idx = 1; // abierta
+          } else {
+            lv_obj_set_style_text_color(id(thermostat_window_label), lv_color_hex(0x9E9E9E), 0); // gris
+            window_icon_idx = 0; // cerrada
+          }
+
+          // Array de iconos de ventana
+          static const char* window_icons[] = {"\U000F11DB", "\U000F11DC"}; // cerrada, abierta
+
+          lv_label_set_text(id(thermostat_window_label), window_icons[window_icon_idx]);
+
+
   - id: thermostat_cycle_refresh
     then:
       - delay: 500ms
       - lambda: |-
           int idx = id(current_climate_index);
-          ESP_LOGI("CYCLE_REFRESH", "Manually publishing templates for index %d", idx);
+          ESP_LOGD("CYCLE_REFRESH", "Manually publishing templates for index %d", idx);
 
           // Target temp
           {
@@ -2503,12 +2339,14 @@ script:
           if (!id(thermostat_arc_range_initialized)) {
             id(thermostat_update_arc_temp_range).execute();
           }
+
       - script.execute: thermostat_get_current_values
       - script.execute: thermostat_update_active_arc_layer
       - script.execute: thermostat_update_segments
       - script.execute: thermostat_update_mode_buttons_visibility
       - script.execute: thermostat_update_preset_buttons_visibility
       - script.execute: thermostat_update_adjust_buttons_color
+      - script.execute: update_thermostat_window_display
 
   - id: thermostat_get_current_values
     then:
@@ -2572,7 +2410,6 @@ script:
           };
           show_if_present(id(thermostat_off_mode_btn), "'off'");
           show_if_present(id(thermostat_heat_mode_btn), "'heat'");
-          show_if_present(id(thermostat_auto_mode_btn), "'auto'");
 
   - id: thermostat_update_preset_buttons_visibility
     then:
@@ -2587,7 +2424,6 @@ script:
           };
           show_if_present(id(thermostat_eco_preset_btn), "eco");
           show_if_present(id(thermostat_away_preset_btn), "away");
-          show_if_present(id(thermostat_boost_preset_btn), "boost");
           show_if_present(id(thermostat_comfort_preset_btn), "comfort");
           show_if_present(id(thermostat_home_preset_btn), "home");
           show_if_present(id(thermostat_sleep_preset_btn), "sleep");

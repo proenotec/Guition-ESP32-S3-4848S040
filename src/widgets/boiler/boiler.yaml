@@ -228,6 +228,11 @@ lvgl:
     - id: ${widget_name}_page
       bg_color: color_black
       scrollable: false
+      on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "${widget_name}_page"
       widgets:
         - label:
             id: ${widget_name}_name_label
@@ -728,6 +733,9 @@ lvgl:
                   radius: 15
             on_click:
               - lvgl.widget.hide: boiler_select_widget
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "${widget_name}_page"
               - lvgl.page.show: home_page
 
 script:

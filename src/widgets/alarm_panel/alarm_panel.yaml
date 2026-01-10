@@ -1,8 +1,6 @@
 packages:
   animations: !include animations.yaml
 
-
-
 globals:
   - id: ${widget_name}_supported_features
     type: int
@@ -226,11 +224,15 @@ text_sensor:
 
 
 lvgl:
-
   pages:
     - id: ${widget_name}_page
       bg_color: color_black
       scrollable: false
+      on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "${widget_name}_page"
       widgets:
         - label:
             id: ${widget_name}_name_label
@@ -926,9 +928,10 @@ lvgl:
                   radius: 15
             on_click:
               - lvgl.widget.hide: alarm_panel_select_widget
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "${widget_name}_page"
               - lvgl.page.show: home_page
-
-
 
 key_collector:
   - source_id: ${widget_name}_keypad

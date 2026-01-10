@@ -253,11 +253,15 @@ text_sensor:
 
 
 lvgl:
-
   pages:
     - id: media_player_page
       bg_color: color_black
       scrollable: false
+      on_load:
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "media_player_page"
       widgets:
         - label:
             id: media_player_name_label
@@ -885,6 +889,9 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "media_player_page"
               - lvgl.page.show: home_page
 
 script:

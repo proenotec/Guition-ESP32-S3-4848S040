@@ -7,11 +7,6 @@ globals:
     restore_value: no
     initial_value: '1'
 
-  - id: active_lvgl_page
-    type: std::string
-    restore_value: false
-    initial_value: '"home_page"'
-
   - id: display_lock
     type: bool
     restore_value: yes
@@ -1865,6 +1860,9 @@ script:
 
       # Switch to home page
       - logger.log: "Switching to Home Page"
+      - script.execute:
+          id: page_cleanup
+          page_name: "home_page"
       - lvgl.page.show: home_page
       - delay: 500ms
 

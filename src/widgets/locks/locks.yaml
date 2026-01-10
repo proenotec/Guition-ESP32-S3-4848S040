@@ -76,9 +76,9 @@ text_sensor:
           id: maindoor_lock_label
           text: !lambda |-
             if (x == "locked") {
-              return "Bloqueada";
+              return "Desbloquear";
             } else if (x == "unlocked") {
-              return "Desbloqueada";
+              return "Bloquear";
             } else if (x == "locking") {
               return "Bloqueando...";
             } else if (x == "unlocking") {
@@ -123,9 +123,9 @@ text_sensor:
           id: backdoor_lock_label
           text: !lambda |-
             if (x == "locked") {
-              return "Bloqueada";
+              return "Desbloquear";
             } else if (x == "unlocked") {
-              return "Desbloqueada";
+              return "Bloquear";
             } else if (x == "locking") {
               return "Bloqueando...";
             } else if (x == "unlocking") {
@@ -403,9 +403,10 @@ lvgl:
   pages:
     - id: locks_page
       on_load:
-        - lambda: |-
-            id(active_lvgl_page) = "locks_page";
-            ESP_LOGI("locks_page", "Locks page loaded");
+        # ✅ Método centralizado
+        - script.execute:
+            id: set_active_page
+            page_name: "locks_page"
       widgets:
         # === SECCIÓN SLIDER DE CANDADO ===
         - obj:
@@ -600,7 +601,7 @@ lvgl:
               - label:
                   id: status_msg2
                   align: CENTER
-                  text: "Desliza para desbloquear"
+                  text: "Desliza para quitar candado"
                   text_font: nunito_18
                   text_color: 0x0000FF
 
@@ -650,4 +651,7 @@ lvgl:
                   shadow_opa: transp
                   radius: 15
             on_click:
+              - script.execute:
+                  id: page_cleanup
+                  page_name: "locks_page"
               - lvgl.page.show: home_page
