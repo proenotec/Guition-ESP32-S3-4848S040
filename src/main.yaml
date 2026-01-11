@@ -12,12 +12,17 @@ substitutions:
 
 packages:
   common_substitutions: !include common/substitutions.yaml
+  event_bus: !include common/event_bus.yaml
+  page_manager: !include common/page_manager.yaml
   home: !include widgets/home/home.yaml
 
  # <================================== Cambiar
   vacuum: !include widgets/vacuum/vacuum.yaml
   info: !include widgets/info/info.yaml
   texto: !include widgets/texto/texto.yaml
+  locks: !include widgets/locks/locks.yaml
+  doors: !include widgets/doors/doors.yaml
+  gate: !include widgets/gate/gate.yaml
   thermostat: !include widgets/thermostat/thermostat.yaml
   cover: !include widgets/cover/cover.yaml
   fan: !include widgets/fan/fan.yaml
@@ -37,7 +42,6 @@ packages:
 image: !include common/image.yaml
 font: !include common/fonts.yaml
 color: !include common/colors.yaml
-
 
 http_request:
   verify_ssl: false
@@ -59,7 +63,6 @@ i18n:
 #    - translations/si.yaml
 #    - translations/it.yaml
   default_locale: en
-  use_psram: true
 
 esphome:
   name: ${display_name}
@@ -107,12 +110,6 @@ esp32:
 psram:
   mode: octal
   speed: 80MHz
-
-#logger:
-#  level: debug
-  # logs:
-  #   lvgl: info
-  # hardware_uart: UART0
 
 # Enable logging
 logger:
@@ -407,60 +404,53 @@ button:
     name: "Restart ESP32-2"
     id: restart_button
 
-
-# interval:
-#   - interval: 5s
-#     then:
-#       - lambda: |-
-#           static uint32_t min_stack = UINT32_MAX;
-#           UBaseType_t current = uxTaskGetStackHighWaterMark(NULL);
-#           uint32_t bytes = current * sizeof(StackType_t);
-
-#           if (bytes < min_stack) {
-#             min_stack = bytes;
-#             ESP_LOGW("stack", "New minimum stack: %d bytes", min_stack);
-#           }
-
-#           if (bytes < 512) {
-#             ESP_LOGE("stack", "CRITICAL: Only %d bytes left!", bytes);
-#           }
-
-
-#   - interval: 30s
-#     then:
-#       - lambda: |-
-#           // Общая информация о памяти
-#           ESP_LOGI("memory", "Free heap: %d bytes", esp_get_free_heap_size());
-#           ESP_LOGI("memory", "Free internal heap: %d bytes", esp_get_free_internal_heap_size());
-#           ESP_LOGI("memory", "Min free heap: %d bytes", esp_get_minimum_free_heap_size());
-
-#           // Детальная статистика кучи
-#           multi_heap_info_t info;
-#           heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
-#           ESP_LOGI("memory", "SRAM total: %d, free: %d, largest_free: %d",
-#                    info.total_free_bytes + info.total_allocated_bytes,
-#                    info.total_free_bytes,
-#                    info.largest_free_block);
-
-#           // Статистика по PSRAM
-#           heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
-#           ESP_LOGI("memory", "PSRAM total: %d, free: %d, largest_free: %d",
-#                    info.total_free_bytes + info.total_allocated_bytes,
-#                    info.total_free_bytes,
-#                    info.largest_free_block);
-
-#       - lambda: |-
-#           ESP_LOGI("stack", "Main task free: %d bytes",
-#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("loopTask")));
-#           ESP_LOGI("stack", "System event free: %d bytes",
-#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("sys_evt")));
-#           ESP_LOGI("stack", "Timer task free: %d bytes",
-#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("esp_timer")));
-
-#       - lambda: |-
-#           char* buf = (char*)malloc(1024);
-#           if (buf) {
-#             vTaskList(buf);
-#             ESP_LOGI("stack", "\nTask Name\tState\tPrio\tStack\tNum\n%s", buf);
-#             free(buf);
-#           }
+#interval:
+#  - interval: 5s
+#    then:
+#      - lambda: |-
+#          static uint32_t min_stack = UINT32_MAX;
+#          UBaseType_t current = uxTaskGetStackHighWaterMark(NULL);
+#          uint32_t bytes = current * sizeof(StackType_t);
+#          if (bytes < min_stack) {
+#            min_stack = bytes;
+#            ESP_LOGW("stack", "New minimum stack: %d bytes", min_stack);
+#          }
+#          if (bytes < 512) {
+#            ESP_LOGE("stack", "CRITICAL: Only %d bytes left!", bytes);
+#          }
+#  - interval: 30s
+#    then:
+#      - lambda: |-
+#          // General memory information
+#          ESP_LOGI("memory", "Free heap: %d bytes", esp_get_free_heap_size());
+#          ESP_LOGI("memory", "Free internal heap: %d bytes", esp_get_free_internal_heap_size());
+#          ESP_LOGI("memory", "Min free heap: %d bytes", esp_get_minimum_free_heap_size());
+#
+#          // Detailed heap statistics
+#          multi_heap_info_t info;
+#          heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+#          ESP_LOGI("memory", "SRAM total: %d, free: %d, largest_free: %d",
+#                   info.total_free_bytes + info.total_allocated_bytes,
+#                   info.total_free_bytes,
+#                   info.largest_free_block);
+#
+#          // PSRAM statistics
+#          heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+#          ESP_LOGI("memory", "PSRAM total: %d, free: %d, largest_free: %d",
+#                   info.total_free_bytes + info.total_allocated_bytes,
+#                   info.total_free_bytes,
+#                   info.largest_free_block);
+#      - lambda: |-
+#          ESP_LOGI("stack", "Main task free: %d bytes",
+#                   uxTaskGetStackHighWaterMark(xTaskGetHandle("loopTask")));
+#          ESP_LOGI("stack", "System event free: %d bytes",
+#                   uxTaskGetStackHighWaterMark(xTaskGetHandle("sys_evt")));
+#          ESP_LOGI("stack", "Timer task free: %d bytes",
+#                   uxTaskGetStackHighWaterMark(xTaskGetHandle("esp_timer")));
+#      - lambda: |-
+#          char* buf = (char*)malloc(1024);
+#          if (buf) {
+#            vTaskList(buf);
+#            ESP_LOGI("stack", "\nTask Name\tState\tPrio\tStack\tNum\n%s", buf);
+#            free(buf);
+#          }
