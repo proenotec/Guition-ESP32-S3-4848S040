@@ -1,4 +1,5 @@
 # TEXT FONT
+# https://pictogrammers.com/library/mdi/
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_12
   size: 12
@@ -366,7 +367,6 @@
     "\U000F1011", # blinds_opened
     "\U000F1818", # mdi:bathtub (Bathroom)
     "\U000F02E3", # mdi:bed (Bedroom)
-    "\U000F081C", # mdi:door-open
 #    "\U000F0335", # mdi:lightbulb
 #    "\U000F0769", # mdi:lamp
     "\U000F11DB", # window-closed-variant
@@ -433,6 +433,7 @@
 #    "\U000F0E47", # hand
   ]
 
+#- file: "gfonts://Material+Symbols+Outlined"
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
   id: mdi_icons_32
   size: 32
@@ -443,6 +444,8 @@
     "\U000F033E",  # lock
     "\U000F033F",  # lock-open
     "\U000F05CE",  # lock-clock
+    "\U000F081B",  # door-closed
+    "\U000F081C",  # door-open
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"

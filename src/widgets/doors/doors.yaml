@@ -24,6 +24,16 @@ binary_sensor:
           source: "maindoor"
 
   - platform: homeassistant
+    entity_id: binary_sensor.backdoor_contact
+    id: backdoor_status
+    internal: true
+    on_state:
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "backdoor"
+
+  - platform: homeassistant
     entity_id: binary_sensor.maindormwnd_contact
     id: maindorm_window
     internal: true

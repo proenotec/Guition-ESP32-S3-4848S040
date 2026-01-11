@@ -50,6 +50,12 @@ script:
               ESP_LOGD("EventBus", "   → Forced update to texto_door_window_subscriber");
             }
 
+            auto sub3 = id(locks_door_window_subscriber);
+            if (sub3 != nullptr) {
+              sub3->publish_state(id(event_door_window_changed));
+              ESP_LOGD("EventBus", "   → Forced update to locks_door_window_subscriber");
+            }
+
           } else if (event_type == "temperature") {
             id(event_temperature_changed)++;
             ESP_LOGD("EventBus", "✅ temperature from %s (counter: %d)",

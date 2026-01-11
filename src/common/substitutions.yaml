@@ -27,16 +27,13 @@ substitutions:
   temp_icon_4: "\U000F081C"  # mdi:door-open
 
   # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
-  log_level: "WARN"
-
+  log_level: "DEBUG"
 
   # SETTINGS
-
   secondary_language:        "es"
   timezone:                  "Europe/Madrid"
 
   # ICONS
-
   lock_icon:                  "\U000F033E"
   lock_open_icon:             "\U000F0FC6"
   #lock_variant_icon:          "\U000F0341"

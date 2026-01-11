@@ -21,22 +21,10 @@ binary_sensor:
       - logger.log:
           format: "Main door contact changed: %d"
           args: [ 'x' ]
-      - lvgl.label.update:
-          id: maindoor_status_label
-          text: !lambda |-
-            if (x) {
-              return "Puerta abierta";
-            } else {
-              return "Puerta cerrada";
-            }
-      - lvgl.label.update:
-          id: maindoor_status_label
-          text_color: !lambda |-
-            if (x) {
-              return lv_color_hex(0xFF0000); // Rojo si abierta
-            } else {
-              return lv_color_hex(0x00FF00); // Verde si cerrada
-            }
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "maindoor_contact"
 
   - platform: homeassistant
     id: backdoor_contact
@@ -46,22 +34,10 @@ binary_sensor:
       - logger.log:
           format: "Back door contact changed: %d"
           args: [ 'x' ]
-      - lvgl.label.update:
-          id: backdoor_status_label
-          text: !lambda |-
-            if (x) {
-              return "Puerta sotano abierta";
-            } else {
-              return "Puerta sotano cerrada";
-            }
-      - lvgl.label.update:
-          id: backdoor_status_label
-          text_color: !lambda |-
-            if (x) {
-              return lv_color_hex(0xFF0000); // Rojo si abierta
-            } else {
-              return lv_color_hex(0x00FF00); // Verde si cerrada
-            }
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "backdoor_contact"
 
 text_sensor:
   - platform: homeassistant
@@ -72,44 +48,10 @@ text_sensor:
       - logger.log:
           format: "Main door Nuki state changed to: %s"
           args: [ 'x.c_str()' ]
-      - lvgl.label.update:
-          id: maindoor_lock_label
-          text: !lambda |-
-            if (x == "locked") {
-              return "Desbloquear";
-            } else if (x == "unlocked") {
-              return "Bloquear";
-            } else if (x == "locking") {
-              return "Bloqueando...";
-            } else if (x == "unlocking") {
-              return "Desbloqueando...";
-            } else {
-              return x.c_str();
-            }
-      - lvgl.label.update:
-          id: maindoor_lock_icon
-          text: !lambda |-
-            if (x == "locked") {
-              return "\U000F033E"; // mdi:lock
-            } else if (x == "unlocked") {
-              return "\U000F033F"; // mdi:lock-open
-            } else if (x == "locking" || x == "unlocking") {
-              return "\U000F05CE"; // mdi:lock-clock
-            } else {
-              return "\U000F033E"; // mdi:lock por defecto
-            }
-      - lvgl.label.update:
-          id: maindoor_lock_icon
-          text_color: !lambda |-
-            if (x == "locked") {
-              return lv_color_hex(0x00FF00); // Verde si bloqueada
-            } else if (x == "unlocked") {
-              return lv_color_hex(0xFF6600); // Naranja si desbloqueada
-            } else if (x == "locking" || x == "unlocking") {
-              return lv_color_hex(0xFFFF00); // Amarillo durante la acción
-            } else {
-              return lv_color_hex(0xFFFFFF); // Blanco por defecto
-            }
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "maindoor_nuki"
 
   - platform: homeassistant
     id: backdoor_nuki_state
@@ -119,51 +61,109 @@ text_sensor:
       - logger.log:
           format: "Back door Nuki state changed to: %s"
           args: [ 'x.c_str()' ]
-      - lvgl.label.update:
-          id: backdoor_lock_label
-          text: !lambda |-
-            if (x == "locked") {
-              return "Desbloquear";
-            } else if (x == "unlocked") {
-              return "Bloquear";
-            } else if (x == "locking") {
-              return "Bloqueando...";
-            } else if (x == "unlocking") {
-              return "Desbloqueando...";
-            } else {
-              return x.c_str();
-            }
-      - lvgl.label.update:
-          id: backdoor_lock_icon
-          text: !lambda |-
-            if (x == "locked") {
-              return "\U000F033E"; // mdi:lock
-            } else if (x == "unlocked") {
-              return "\U000F033F"; // mdi:lock-open
-            } else if (x == "locking" || x == "unlocking") {
-              return "\U000F05CE"; // mdi:lock-clock
-            } else {
-              return "\U000F033E"; // mdi:lock por defecto
-            }
-      - lvgl.label.update:
-          id: backdoor_lock_icon
-          text_color: !lambda |-
-            if (x == "locked") {
-              return lv_color_hex(0x00FF00); // Verde si bloqueada
-            } else if (x == "unlocked") {
-              return lv_color_hex(0xFF6600); // Naranja si desbloqueada
-            } else if (x == "locking" || x == "unlocking") {
-              return lv_color_hex(0xFFFF00); // Amarillo durante la acción
-            } else {
-              return lv_color_hex(0xFFFFFF); // Blanco por defecto
-            }
+      - script.execute:
+          id: publish_event
+          event_type: "door_window"
+          source: "backdoor_nuki"
 
   - platform: homeassistant
     id: maindoor_last_seen
     entity_id: sensor.maindoor_last_seen
     internal: true
 
+#on_some_event:
+#  then:
+#    - if:
+#        condition:
+#          lvgl.page.is_showing: therm_page
+#        then:
+#          - lambda: |-
+#              int num_climates = ${climates_amount};
+#              if (num_climates >= 2) {
+#                lv_obj_clear_flag(id(thermo_select_widget), LV_OBJ_FLAG_HIDDEN);
+#              }
+#          # Optional: Add a short delay if needed for smooth transitions
+#          # - delay: 250ms  # Uncomment if you see flickering
+
+script:
+  - id: update_locks_doors_display
+    then:
+      - lambda: |-
+          ESP_LOGD("locks", "Updating locks and doors display");
+
+          // Update Main Door contact status and icon
+          if (id(maindoor_contact).state) {
+            lv_label_set_text(id(main_door_icon), "\U000F081C"); // mdi:door-open
+            lv_obj_set_style_text_color(id(main_door_icon), lv_color_hex(0xFF0000), 0); // Red
+          } else {
+            lv_label_set_text(id(main_door_icon), "\U000F081B"); // mdi:door
+            lv_obj_set_style_text_color(id(main_door_icon), lv_color_hex(0x00FF00), 0); // Green
+          }
+
+          // Update Back Door contact status and icon
+          if (id(backdoor_contact).state) {
+            lv_label_set_text(id(back_door_icon), "\U000F081C"); // mdi:door-open
+            lv_obj_set_style_text_color(id(back_door_icon), lv_color_hex(0xFF0000), 0); // Red
+          } else {
+            lv_label_set_text(id(back_door_icon), "\U000F081B"); // mdi:door
+            lv_obj_set_style_text_color(id(back_door_icon), lv_color_hex(0x00FF00), 0); // Green
+          }
+
+          // Update Main Door Lock icon and label
+          std::string main_lock_state = id(maindoor_nuki_state).state;
+          if (main_lock_state == "locked") {
+            lv_label_set_text(id(maindoor_lock_label), "Desbloquear");
+            lv_label_set_text(id(maindoor_lock_icon), "\U000F033E"); // mdi:lock
+            lv_obj_set_style_text_color(id(maindoor_lock_icon), lv_color_hex(0x00FF00), 0); // Green
+          } else if (main_lock_state == "unlocked") {
+            lv_label_set_text(id(maindoor_lock_label), "Bloquear");
+            lv_label_set_text(id(maindoor_lock_icon), "\U000F033F"); // mdi:lock-open
+            lv_obj_set_style_text_color(id(maindoor_lock_icon), lv_color_hex(0xFF6600), 0); // Orange
+          } else if (main_lock_state == "locking" || main_lock_state == "unlocking") {
+            lv_label_set_text(id(maindoor_lock_label),
+              main_lock_state == "locking" ? "Bloqueando..." : "Desbloqueando...");
+            lv_label_set_text(id(maindoor_lock_icon), "\U000F05CE"); // mdi:lock-clock
+            lv_obj_set_style_text_color(id(maindoor_lock_icon), lv_color_hex(0xFFFF00), 0); // Yellow
+          }
+
+          // Update Back Door Lock icon and label
+          std::string back_lock_state = id(backdoor_nuki_state).state;
+          if (back_lock_state == "locked") {
+            lv_label_set_text(id(backdoor_lock_label), "Desbloquear");
+            lv_label_set_text(id(backdoor_lock_icon), "\U000F033E"); // mdi:lock
+            lv_obj_set_style_text_color(id(backdoor_lock_icon), lv_color_hex(0x00FF00), 0); // Green
+          } else if (back_lock_state == "unlocked") {
+            lv_label_set_text(id(backdoor_lock_label), "Bloquear");
+            lv_label_set_text(id(backdoor_lock_icon), "\U000F033F"); // mdi:lock-open
+            lv_obj_set_style_text_color(id(backdoor_lock_icon), lv_color_hex(0xFF6600), 0); // Orange
+          } else if (back_lock_state == "locking" || back_lock_state == "unlocking") {
+            lv_label_set_text(id(backdoor_lock_label),
+              back_lock_state == "locking" ? "Bloqueando..." : "Desbloqueando...");
+            lv_label_set_text(id(backdoor_lock_icon), "\U000F05CE"); // mdi:lock-clock
+            lv_obj_set_style_text_color(id(backdoor_lock_icon), lv_color_hex(0xFFFF00), 0); // Yellow
+          }
+
+          ESP_LOGD("locks", "Display update complete");
+
 sensor:
+  - platform: template
+    id: locks_door_window_subscriber
+    internal: true
+    # NO LAMBDA - se actualiza via publish_state()
+    on_value:
+      - lambda: |-
+          ESP_LOGD("locks_sub", "🔔 Event received! Counter: %.0f", x);
+          ESP_LOGD("locks_sub", "   Page: %s, Source: %s",
+                   id(active_lvgl_page).c_str(), id(last_event_source).c_str());
+      - if:
+          condition:
+            lambda: 'return id(active_lvgl_page) == "locks_page";'
+          then:
+            - logger.log: "✅ Calling update_locks_doors_display"
+            - script.execute: update_locks_doors_display
+          else:
+            - logger.log: "⚠️ Not on locks_page, ignoring"
+
   - platform: homeassistant
     id: maindoor_battery
     entity_id: sensor.nuki_front_door_battery
@@ -217,14 +217,50 @@ button:
                       id: status_msg2
                       text: "Desbloqueando puerta principal"
                 else:
-                  - logger.log: "Locking main door"
-                  - homeassistant.service:
-                      service: lock.lock
-                      data:
-                        entity_id: lock.nuki_front_door
-                  - lvgl.label.update:
-                      id: status_msg2
-                      text: "Bloqueando puerta principal"
+                  # Check if door is closed before locking
+                  - if:
+                      condition:
+                        lambda: 'return id(maindoor_contact).state;'  # true = open
+                      then:
+                        - logger.log: "Cannot lock - door is OPEN"
+                        - lvgl.label.update:
+                            id: status_msg2
+                            text: "ATENCION: No se puede bloquear - puerta abierta"
+                            text_color: 0xFF0000
+                        # Start blinking animation
+                        - delay: 100ms
+                        - lvgl.widget.update:
+                            id: status_msg2
+                            opa: 0%           # ← corrected property name + percent sign
+                        - repeat:
+                            count: 6
+                            then:
+                              - lvgl.widget.update:
+                                  id: status_msg2
+                                  opa: 100%
+                              - delay: 400ms
+                              - lvgl.widget.update:
+                                  id: status_msg2
+                                  opa: 0%
+                              - delay: 400ms
+                        # Optional: make sure it's fully visible again at the end
+                        - lvgl.widget.update:
+                            id: status_msg2
+                            opa: 100%
+                        - delay: 2s
+                        - lvgl.label.update:
+                            id: status_msg2
+                            text: "Desliza para quitar candado"
+                            text_color: 0x0000FF
+                      else:
+                        - logger.log: "Locking main door"
+                        - homeassistant.service:
+                            service: lock.lock
+                            data:
+                              entity_id: lock.nuki_front_door
+                        - lvgl.label.update:
+                            id: status_msg2
+                            text: "Bloqueando puerta principal"
           else:
             - logger.log: "Candado is NOT active"
             - lvgl.label.update:
@@ -282,14 +318,50 @@ button:
                       id: status_msg2
                       text: "Desbloqueando puerta trasera"
                 else:
-                  - logger.log: "Locking back door"
-                  - homeassistant.service:
-                      service: lock.lock
-                      data:
-                        entity_id: lock.nuki_back_door
-                  - lvgl.label.update:
-                      id: status_msg2
-                      text: "Bloqueando puerta trasera"
+                  # Check if door is closed before locking
+                  - if:
+                      condition:
+                        lambda: 'return id(backdoor_contact).state;'  # true = open
+                      then:
+                        - logger.log: "Cannot lock - door is OPEN"
+                        - lvgl.label.update:
+                            id: status_msg2
+                            text: "ATENCION: No se puede bloquear - puerta abierta"
+                            text_color: 0xFF0000
+                        # Start blinking animation
+                        - delay: 100ms
+                        - lvgl.widget.update:
+                            id: status_msg2
+                            opa: 0%           # ← corrected property name + percent sign
+                        - repeat:
+                            count: 6
+                            then:
+                              - lvgl.widget.update:
+                                  id: status_msg2
+                                  opa: 100%
+                              - delay: 400ms
+                              - lvgl.widget.update:
+                                  id: status_msg2
+                                  opa: 0%
+                              - delay: 400ms
+                        # Optional: make sure it's fully visible again at the end
+                        - lvgl.widget.update:
+                            id: status_msg2
+                            opa: 100%
+                        - delay: 2s
+                        - lvgl.label.update:
+                            id: status_msg2
+                            text: "Desliza para quitar candado"
+                            text_color: 0x0000FF
+                      else:
+                        - logger.log: "Locking back door"
+                        - homeassistant.service:
+                            service: lock.lock
+                            data:
+                              entity_id: lock.nuki_back_door
+                        - lvgl.label.update:
+                            id: status_msg2
+                            text: "Bloqueando puerta trasera"
           else:
             - logger.log: "Candado is NOT active"
             - lvgl.label.update:
@@ -407,6 +479,8 @@ lvgl:
         - script.execute:
             id: set_active_page
             page_name: "locks_page"
+        # ✅ Actualizar display al cargar la página
+        - script.execute: update_locks_doors_display
       widgets:
         # === SECCIÓN SLIDER DE CANDADO ===
         - obj:
@@ -415,12 +489,12 @@ lvgl:
             y: 5
             pad_all: 8
             widgets:
-              - label:
-                  align: TOP_MID
-                  y: 5
-                  text: "Nuki Control"
-                  text_font: nunito_24
-                  text_color: 0xFFFFFF
+              # - label:
+              #     align: TOP_MID
+              #     y: 5
+              #     text: "Nuki Control"
+              #     text_font: nunito_24
+              #     text_color: 0
 
               - slider:
                   id: progress_slider2
@@ -480,7 +554,7 @@ lvgl:
                   y: 0
                   text: "PUERTA PRINCIPAL"
                   text_font: nunito_16
-                  text_color: 0xFFFFFF
+                  text_color: 0
 
               # Botón Main Door Lock/Unlock
               - button:
@@ -506,8 +580,15 @@ lvgl:
                         id: maindoor_lock_label
                         align: BOTTOM_MID
                         y: -5
-                        text: "Lock/Unlock"
+                        text: "xxx"
                         text_font: nunito_14
+                    - label:
+                        id: main_door_icon
+                        align: RIGHT_MID
+                        x: 0
+                        text: "\U000F081C"
+                        text_font: mdi_icons_32
+                        text_color: 0xFF0000
                   on_press:
                     - button.press: main_door_toggle
 
@@ -538,22 +619,13 @@ lvgl:
                   on_press:
                     - button.press: main_door_unlatch
 
-              # Label estado puerta principal
-              - label:
-                  id: maindoor_status_label
-                  align: TOP_MID
-                  y: 110
-                  text: "Puerta cerrada"
-                  text_font: nunito_18
-                  text_color: 0x00FF00
-
               # Título Puerta Trasera
               - label:
                   align: CENTER
-                  y: -10
+                  y: 10
                   text: "PUERTA TRASERA"
                   text_font: nunito_16
-                  text_color: 0xFFFFFF
+                  text_color: 0
 
               # Botón Back Door Lock/Unlock
               - button:
@@ -577,19 +649,17 @@ lvgl:
                     - label:
                         id: backdoor_lock_label
                         align: CENTER
-                        text: "Lock/Unlock"
+                        text: "xxx"
                         text_font: nunito_18
+                    - label:
+                        id: back_door_icon
+                        align: RIGHT_MID
+                        x: 0
+                        text: "\U000F081C"
+                        text_font: mdi_icons_32
+                        text_color: 0xFF0000
                   on_press:
                     - button.press: back_door_toggle
-
-              # Label estado puerta trasera
-              - label:
-                  id: backdoor_status_label
-                  align: BOTTOM_MID
-                  y: 0
-                  text: "Puerta cerrada"
-                  text_font: nunito_18
-                  text_color: 0x00FF00
 
         # Mensaje de estado
         - obj:

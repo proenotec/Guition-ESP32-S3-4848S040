@@ -2187,7 +2187,6 @@ script:
 
           lv_label_set_text(id(thermostat_window_label), window_icons[window_icon_idx]);
 
-
   - id: thermostat_cycle_refresh
     then:
       - delay: 500ms
