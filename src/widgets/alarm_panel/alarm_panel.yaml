@@ -1,5 +1,6 @@
+
 packages:
-  animations: !include animations.yaml
+  - !include animations.yaml
 
 globals:
   - id: ${widget_name}_supported_features

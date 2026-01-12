@@ -5,3 +5,25 @@ fan_entity_2: "fan.petinfan_2"
 
 fan_icon_1: "\U000F02E3"  # mdi:bed (Bedroom)
 fan_icon_2: "\U000F04B9"  # mdi:sofa (Living Room)
+
+power_icon:                 "\U000F0906" # on/off
+#  boost_preset_icon:          "\U000F14DE"
+
+#fan_on_icon:                "\U000F0210"
+#fan_off_icon:               "\U000F081D"
+#fan_auto_icon:              "\U000F171D"
+#fan_low_icon:               "\U000F0F86"
+#fan_medium_icon:            "\U000F0F85"
+#fan_middle_icon:            "\U000F0F85"
+#fan_high_icon:              "\U000F04C5"
+#fan_focus_icon:             "\U000F04FE"
+#fan_diffuse_icon:           "\U000F059D"
+#fan_custom_icon:            "\U000F09DF"
+#swing_on_icon:              "\U000F1C91"
+#swing_off_icon:             "\U000F1C92"
+#swing_both_icon:            "\U000F0041"
+#swing_vertical_icon:        "\U000F0E79"
+#swing_horizontal_icon:      "\U000F0E73"
+
+#rotate_left_icon:        "\U000F0465"
+#rotate_right_icon:       "\U000F0467"

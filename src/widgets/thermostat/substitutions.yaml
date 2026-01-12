@@ -13,3 +13,25 @@ thermo_icon_1: "\U000F04B9"  # mdi:sofa (Living Room)
 thermo_icon_2: "\U000F1818"  # mdi:bathtub (Bathroom)
 thermo_icon_3: "\U000F02E3"  # mdi:bed (Bedroom)
 thermo_icon_4: "\U000F081C"  # mdi:door-open
+
+#  climate_icon:               "\U0000e93b"
+heat_icon:                  "\U000F0238"
+#  cool_icon:                  "\U000F0717"
+#  heat_cool_icon:             "\U000F1A79"
+#  fan_icon:                   "\U000F0210"
+#  auto_icon:                  "\U000F1B18"
+off_icon:                   "\U000F0425"
+plus_icon:                  "\U000F0415"
+minus_icon:                 "\U000F0374"
+
+#  none_preset_icon:           "\U000F043D"
+eco_preset_icon:            "\U000F032A"
+away_preset_icon:           "\U000F0F9B"
+comfort_preset_icon:        "\U000F04B9"
+home_preset_icon:           "\U000F02DC"
+sleep_preset_icon:          "\U000F0904"
+activity_preset_icon:       "\U000F046E"
+#  smart_preset_icon:          "\U000F09D1"
+
+arrow_up_icon:              "\U000F19B2"
+arrow_down_icon:            "\U000F19B3"

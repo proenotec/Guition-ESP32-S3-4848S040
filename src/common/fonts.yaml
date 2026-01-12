@@ -375,6 +375,7 @@
     "\U000F0238", # fire
     "\U000F0763", # square-outline
     "\U000F0764", # square
+    "\U000F081C",  # door-open
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"

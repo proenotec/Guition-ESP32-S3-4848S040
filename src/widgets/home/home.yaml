@@ -1,5 +1,7 @@
+substitutions: !include substitutions.yaml
+
 packages:
-  animations: !include animations.yaml
+  - !include animations.yaml
 
 globals:
   - id: current_sensor_index

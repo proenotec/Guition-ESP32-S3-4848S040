@@ -1,3 +1,12 @@
 vacuum_entity: "vacuum.petin_robot_vacuum"
 battery_level_entity: "sensor.petin_robot_vacuum_battery_level"
 cleaned_area_entity: "sensor.petin_robot_vacuum_current_clean_area"
+
+sleep_icon:                 "\U000F04B2"
+return_to_base_icon:        "\U000F05F8"
+clean_spot_icon:            "\U000F0A77"
+locate_map_icon:            "\U000F034E"
+
+play_icon:                  "\U000F040A"
+pause_icon:                 "\U000F03E4"
+stop_icon:                  "\U000F04DB"
