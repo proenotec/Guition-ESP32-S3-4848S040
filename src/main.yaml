@@ -13,6 +13,8 @@ substitutions:
 packages:
   common_substitutions: !include common/substitutions.yaml
   event_bus: !include common/event_bus.yaml
+
+  # Add here the hiding of elements when a page becomes not visible
   page_manager: !include common/page_manager.yaml
   home: !include widgets/home/home.yaml
 
@@ -26,8 +28,8 @@ packages:
   thermostat: !include widgets/thermostat/thermostat.yaml
   cover: !include widgets/cover/cover.yaml
   fan: !include widgets/fan/fan.yaml
+  media_player: !include widgets/media_player/media_player.yaml
 
-  # media_player: !include widgets/media_player/media_player.yaml
   # boiler: !include widgets/boiler/config.yaml
   # alarm_panel: !include widgets/alarm_panel/config.yaml
   # <==================================
@@ -132,10 +134,17 @@ ota:
     password: !secret display_ota
     on_begin:
       - logger.log: "OTA Start"
-      - light.turn_on: display_backlight
-      - lambda: "id(display_backlight).loop();"
-      - lvgl.resume:
+      - output.turn_on: backlight_output
+      #- output.set_level:
+      #    id: backlight_output
+      #    level: 100%
+      - output.set_level:
+          id: backlight_output
+          level: 1.0
+      - delay: 200ms
+      - lvgl.resume:  # Resume first
       - lvgl.widget.redraw:
+      - script.execute: exit_screensaver
       - lvgl.label.update:
           id: ota_label_primary
           text: !lambda |-
@@ -147,7 +156,6 @@ ota:
       - lvgl.widget.show: ota_widget
       - lvgl.resume:
       - lvgl.widget.redraw:
-      - lambda: "id(lvgl_component).loop();"
       - lambda: "id(lvgl_component).loop();"
       - logger.log: "OTA widget shown"
 
@@ -179,8 +187,7 @@ ota:
           id: ota_label_secondary
           text: !lambda |-
             return id(i18n_translations).translate("ota.end.secondary");
-      - lambda: |-
-          id(lvgl_component).loop();
+      - lambda: "id(lvgl_component).loop();"
 
     on_error:
       - logger.log:
@@ -270,20 +277,30 @@ light:
     name: Backlight
     id: display_backlight
     restore_mode: ALWAYS_ON
+    default_transition_length: 0s
     on_turn_on:
+      - lambda: |-
+          ESP_LOGI("backlight", "Brightness requested: %.0f%%", id(display_backlight).remote_values.get_brightness() * 100);
       - if:
           condition: lvgl.is_paused
           then:
             - logger.log: "LVGL resuming by backlight on"
             - lvgl.resume:
             - lvgl.widget.redraw:
+            - logger.log: "LVGL is idle - activating screensaver"
+            # Activar el salvapantallas
+            - script.execute: activate_screensaver
+            # Reducir brillo
+            - light.turn_on:
+                id: display_backlight
+                brightness: 30%  # Brillo bajo para el salvapantallas
     on_turn_off:
       - if:
           condition:
             lambda: 'return id(display_timeout_backlight).state >= 0;'
           then:
             - logger.log: "Backlight off, pausing LVGL"
-            - script.execute: pause_lvgl_display  # ✅ Use centralized script
+            - script.execute: pause_lvgl_display
 
 output:
     # Backlight LED
@@ -315,11 +332,10 @@ touchscreen:
           - lvgl.resume:
           - lvgl.widget.redraw:
           - light.turn_on: display_backlight
-        #  - delay: 100ms  # Wait for backlight to turn on
-        #  - lambda: |-
-        #      if (id(active_lvgl_page) == "textopage") {
-        #        id(cycle_texto_page_climates).execute();
-        #      }
+        else:
+          - light.turn_on:
+              id: display_backlight
+              brightness: 100%
 
   # on_touch:
   #   - lambda: |-
@@ -401,7 +417,7 @@ time:
 
 button:
   - platform: restart
-    name: "Restart ESP32-2"
+    name: "Reboot"
     id: restart_button
 
 #interval:

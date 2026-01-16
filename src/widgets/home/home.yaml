@@ -4,6 +4,22 @@ packages:
   - !include animations.yaml
 
 globals:
+  # Nuevos globals para el salvapantallas
+  - id: screensaver_active
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: screensaver_x_pos
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: screensaver_y_pos
+    type: int
+    restore_value: no
+    initial_value: '0'
+
   - id: current_sensor_index
     type: int
     restore_value: no
@@ -412,6 +428,24 @@ text_sensor:
         - lvgl.label.update:
             id: esphome_version_info_state
             text: !lambda 'return id(esphome_version).state;'
+
+#lvgl:
+#  on_idle:
+#    timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
+#    then:
+#      - if:
+#          condition:
+#            lambda: 'return id(display_timeout_backlight).state >= 0;'
+#          then:
+#            - logger.log: "LVGL is idle - activating screensaver"
+#            # Activar el salvapantallas en lugar de solo apagar
+#            - script.execute: activate_screensaver
+#            # Opcional: reducir brillo en lugar de apagar completamente
+#            - light.turn_on:
+#                id: display_backlight
+#                brightness: 30%  # Brillo bajo para el salvapantallas
+#          else:
+#            - logger.log: "LVGL idle, but backlight timeout disabled"
 
 lvgl:
   on_idle:
@@ -1376,9 +1410,13 @@ lvgl:
                         text: "${brightness_icon}"
                   on_click:
                     - delay: 1s
-                    - light.turn_off: display_backlight
-                    - script.execute: pause_lvgl_display  # ✅ Use centralized script
-
+                    #- light.turn_off: display_backlight
+                    #- script.execute: pause_lvgl_display
+                    - script.execute: activate_screensaver
+                    # Reducir brillo
+                    - light.turn_on:
+                        id: display_backlight
+                        brightness: 30%  # Brillo bajo para el salvapantallas
               - button:
                   id: home_widget_btn
                   clickable: true
@@ -1597,14 +1635,15 @@ lvgl:
                               align: top_mid
                               text_font: nunito_20
                               text_color: color_misty_blue
-                              text: "22.5°"
+                              text: "xxx"
+
                           - label:
                               y: -10
                               id: circle_home_widget_hum_value
                               align: bottom_mid
                               text_font: nunito_20
                               text_color: color_misty_blue
-                              text: "62 %"
+                              text: "xxx"
 
                           - label:
                               id: circle_home_widget_icon
@@ -1724,6 +1763,45 @@ lvgl:
                         on_click:
                           - switch.toggle: language_switch
 
+    - id: screensaver_page
+      on_load:
+        - script.execute:
+            id: set_active_page
+            page_name: "screensaver_page"
+      bg_color: 0x000000  # Negro puro
+      scrollable: false
+      widgets:
+        - obj:
+            id: screensaver_container
+            x: 0
+            y: 0
+            width: 480
+            height: 480
+            align: TOP_LEFT
+            clickable: true
+            bg_opa: TRANSP
+            border_opa: TRANSP
+            on_click:
+              - script.execute: exit_screensaver
+            widgets:
+              - label:
+                  id: screensaver_time
+                  x: 0
+                  y: 0
+                  align: TOP_LEFT
+                  text_font: nunito_84
+                  text_color: 0x9BA2BC
+                  text: "00:00"
+
+              - label:
+                  id: screensaver_date
+                  x: 0
+                  y: 100
+                  align: TOP_LEFT
+                  text_font: nunito_24
+                  text_color: 0x5CA848
+                  text: "01 January"
+
 mapping:
   - id: flag_icon_mapping
     from: string
@@ -1765,6 +1843,27 @@ script:
             temp = id(home_temperature_sensor4).state;
             hum = id(home_humidity_sensor4).state;
           }
+
+          bool should_blink_fast = (temp < 18.0f) || (temp > 23.0f);   // ← adjust thresholds
+
+          // Set text color based on condition
+          if (should_blink_fast) {
+            lv_obj_set_style_text_color(id(circle_home_widget_temp_value), lv_color_hex(0xFF0000), 0);  // Red
+          } else {
+            lv_obj_set_style_text_color(id(circle_home_widget_temp_value), lv_color_hex(0xFFFFFF), 0);  // Default white (adjust hex if needed)
+          }
+
+          // Always stop any existing blink first to reset
+          id(stop_blink_room_icon).execute();
+
+          if (should_blink_fast && id(current_mode) == 0) {
+            // blink fast
+            id(fast_blink_room_icon).execute();
+          } else {
+            // blink slow (even if not in home mode or in-range)
+            id(slow_blink_room_icon).execute();
+          }
+
       - lvgl.label.update:
           id: circle_home_widget_temp_value
           text: !lambda |-
@@ -2214,8 +2313,6 @@ script:
 
       - script.execute: update_daily_display
 
-
-
   # ========================================
   # 2️⃣ PARSE HOURLY FORECASTS (FIXED)
   # ========================================
@@ -2312,6 +2409,9 @@ script:
           if (!id(weather_forecast_daily)) return;
 
           // static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          // Change to:
+          // lv_obj_set_style_text_font(icon, id(mdi_icons_24), 0);
+          // lv_obj_set_style_text_font(txt, id(nunito_16), 0);
 
           lv_obj_clean(id(weather_forecast_daily));
 
@@ -2376,7 +2476,8 @@ script:
             if (day_label) {
               lv_label_set_text(day_label, get_day_name(i));
               lv_obj_align(day_label, LV_ALIGN_TOP_MID, 0, 0);
-              lv_obj_set_style_text_font(day_label, id(nunito_16)->get_lv_font(), 0);
+              // lv_obj_set_style_text_font(day_label, id(nunito_16)->get_lv_font(), 0);
+              lv_obj_set_style_text_font(day_label, id(nunito_16), 0);
               lv_obj_set_style_text_color(day_label, lv_color_hex(0x9BA2BC), 0);
             }
 
@@ -2395,11 +2496,11 @@ script:
               snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_daily_temps)[i]);
               lv_label_set_text(temp_label, temp_str);
               lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
-              lv_obj_set_style_text_font(temp_label, id(nunito_16)->get_lv_font(), 0);
+              // lv_obj_set_style_text_font(temp_label, id(nunito_16)->get_lv_font(), 0);
+              lv_obj_set_style_text_font(temp_label, id(nunito_16), 0);
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
-
 
   # ========================================
   # 4️⃣ UPDATE HOURLY DISPLAY (FIXED)
@@ -2515,3 +2616,130 @@ script:
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
+
+  # Script para activar el salvapantallas
+  - id: activate_screensaver
+    mode: restart
+    then:
+      - logger.log: "🌙 Activating screensaver"
+      - lambda: |-
+          id(screensaver_active) = true;
+      # Actualizar la hora inicial
+      - script.execute: update_screensaver_time
+      # Cambiar a la página del salvapantallas
+      - script.execute:
+          id: page_cleanup
+          page_name: "home_page"
+      - lvgl.page.show: screensaver_page
+      # Iniciar el movimiento del salvapantallas
+      - script.execute: move_screensaver
+
+  # Script para salir del salvapantallas
+  - id: exit_screensaver
+    mode: restart
+    then:
+      - logger.log: "☀️ Exiting screensaver"
+      - lambda: |-
+          id(screensaver_active) = false;
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+          transition_length: 0s
+      # Volver a la página principal
+      - script.execute:
+          id: page_cleanup
+          page_name: "screensaver_page"
+      - lvgl.page.show: home_page
+      # Encender la luz de fondo si estaba apagada
+      - if:
+          condition:
+            light.is_off: display_backlight
+          then:
+            - light.turn_on:
+                id: display_backlight
+                brightness: 100%
+      # Reanudar LVGL si estaba pausado
+      - lvgl.resume:
+
+  # Script para actualizar la hora en el salvapantallas
+  - id: update_screensaver_time
+    mode: restart
+    then:
+      - lvgl.label.update:
+          id: screensaver_time
+          text: !lambda |-
+            static char time_buf[16];
+            auto now = id(sntp_time).now();
+            snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+            return time_buf;
+
+      - lvgl.label.update:
+          id: screensaver_date
+          text: !lambda |-
+            auto now = id(sntp_time).now();
+            const char* month_keys[] = {"month.january", "month.february", "month.march", "month.april",
+                                        "month.may", "month.june", "month.july", "month.august",
+                                        "month.september", "month.october", "month.november", "month.december"};
+            const char* month_key = month_keys[now.month - 1];
+
+            static char buf[64];
+            snprintf(buf, sizeof(buf), "%02d %s", now.day_of_month,
+                    id(i18n_translations).translate(month_key).c_str());
+            return buf;
+
+  # Script para mover el salvapantallas (anti burn-in)
+  - id: move_screensaver
+    mode: restart
+    then:
+      - while:
+          condition:
+            lambda: 'return id(screensaver_active);'
+          then:
+            # Actualizar la hora
+            - script.execute: update_screensaver_time
+
+            # Calcular nueva posición aleatoria
+            - lambda: |-
+                // Márgenes de seguridad para que el texto no se salga
+                int max_x = 480 - 300;  // Ancho de pantalla - ancho aproximado del texto
+                int max_y = 480 - 150;  // Alto de pantalla - alto aproximado del texto
+
+                // Generar posición aleatoria
+                id(screensaver_x_pos) = random() % max_x;
+                id(screensaver_y_pos) = random() % max_y;
+
+                ESP_LOGD("screensaver", "Moving to position: x=%d, y=%d",
+                        id(screensaver_x_pos), id(screensaver_y_pos));
+
+            # Mover el contenedor a la nueva posición
+            - lvgl.obj.update:
+                id: screensaver_container
+                x: !lambda 'return id(screensaver_x_pos);'
+                y: !lambda 'return id(screensaver_y_pos);'
+
+            # Esperar 1 minuto antes del siguiente movimiento
+            - delay: 60s
+
+
+interval:
+  - interval: 5s
+    then:
+      #- logger.log:
+      #    format: "⏰ Interval triggered - current_mode: %d"
+      #    level: INFO
+      #    args: ['id(current_mode)']
+      - if:
+          condition:
+            lambda: 'return id(current_mode) == 0;'
+          then:
+      #      - logger.log: "✅ Condition MET - Executing update_circle_display"
+            - lambda: |-
+                int temps_amount = ${temps_amount};
+                id(current_sensor_index) = (id(current_sensor_index) % temps_amount) + 1;
+            - script.execute: update_circle_display
+      #      - logger.log: "✅ Script executed"
+      #    else:
+      #      - logger.log:
+      #          format: "❌ Condition NOT met - mode is %d (expected 0)"
+      #          level: INFO
+      #          args: ['id(current_mode)']

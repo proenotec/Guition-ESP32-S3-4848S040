@@ -1,6 +1,5 @@
 substitutions: !include substitutions.yaml
 
-
 globals:
   - id: repeat_modes
     type: std::vector<std::string>
@@ -468,7 +467,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: icons_40
+                                    text_font: mdi_icons_40
                                     text_color: color_misty_blue
                                     text: "${previous_track_icon}"
 
@@ -535,7 +534,7 @@ lvgl:
                               widgets:
                                 - label:
                                     align: center
-                                    text_font: icons_40
+                                    text_font: mdi_icons_40
                                     text_color: color_misty_blue
                                     text: "${next_track_icon}"
 
@@ -586,7 +585,7 @@ lvgl:
                           - label:
                               align: center
                               text_color: color_misty_blue
-                              text_font: icons_28
+                              text_font: mdi_icons_28
                               text: "${power_icon}"
                               on_press:
                                 - homeassistant.action:
@@ -615,7 +614,7 @@ lvgl:
                               id: media_player_repeat_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: icons_28
+                              text_font: mdi_icons_28
                               text: "${repeat_all_icon}"
                               on_press:
                                 - script.execute: handle_repeat_press_script
@@ -642,7 +641,7 @@ lvgl:
                               id: media_player_source_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: icons_28
+                              text_font: mdi_icons_28
                               text: "${media_source}"
                         on_click:
                           - lambda: |-
@@ -674,7 +673,7 @@ lvgl:
                               id: media_player_mute_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: icons_28
+                              text_font: mdi_icons_28
                               text: "${volume_on_icon}"
                               on_press:
                                 - if:
@@ -715,7 +714,7 @@ lvgl:
                               id: media_player_vol_down_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: icons_28
+                              text_font: mdi_icons_28
                               text: "${volume_minus_icon}"
                               on_press:
                                 - homeassistant.action:
@@ -746,14 +745,13 @@ lvgl:
                               id: media_player_vol_up_label
                               align: center
                               text_color: color_misty_blue
-                              text_font: icons_28
+                              text_font: mdi_icons_28
                               text: "${volume_plus_icon}"
                               on_press:
                                 - homeassistant.action:
                                     action: media_player.volume_up
                                     data:
                                       entity_id: "${media_player_entity}"
-
 
         # CIRCLE
         - obj:
@@ -779,7 +777,6 @@ lvgl:
                   radius: 50
                   border_opa: transp
                   bg_color: color_slate_blue_gray
-
 
               - obj:
                   width: 150
@@ -827,7 +824,7 @@ lvgl:
                               id: media_player_state_label
                               align: CENTER
                               text_color: color_misty_blue
-                              text_font: icons_52
+                              text_font: mdi_icons_52
                               text: "${play_icon}"
                               on_press:
                                 - if:
@@ -969,7 +966,10 @@ script:
   - id: media_player_build_source_panel
     then:
       - lambda: |-
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          // static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          // Change to:
+          // lv_obj_set_style_text_font(icon, id(mdi_icons_24), 0);
+          // lv_obj_set_style_text_font(txt, id(nunito_16), 0);
 
           lv_obj_t * cont = id(media_player_source_panel);
           if (!cont) return;
@@ -1008,7 +1008,8 @@ script:
             if (!caption.empty())
               caption[0] = (char)std::toupper((unsigned char)caption[0]);
             lv_label_set_text(txt, caption.c_str());
-            lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+            // lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+            lv_obj_set_style_text_font(txt, id(nunito_16), 0);
 
             lv_color_t c = (i == sel) ? COLOR_ACTIVE : COLOR_DEFAULT;
             lv_obj_set_style_text_color(txt, c, 0);

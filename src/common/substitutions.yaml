@@ -12,7 +12,7 @@ substitutions:
   weather_entity:           "weather.forecast_home"
 
   # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
-  log_level: "DEBUG"
+  log_level: "WARN"
 
   # SETTINGS
   secondary_language:        "es"

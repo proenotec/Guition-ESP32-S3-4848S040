@@ -1,5 +1,79 @@
 script:
 
+  - id: slow_blink_room_icon
+    then:
+      - lambda: |-
+          // Initialize the animation structure
+          lv_anim_t anim;
+          lv_anim_init(&anim);
+
+          // Set the target widget (replace id(circle_home_widget_icon) with your icon's ID, e.g., id(wifi_status))
+          lv_anim_set_var(&anim, id(circle_home_widget_icon));
+
+          // Animate opacity from 255 (visible) to 0 (invisible)
+          lv_anim_set_values(&anim, 255, 0);
+
+          // Time for one way (fade out): 1400ms (half of full 2800ms blink cycle)
+          lv_anim_set_time(&anim, 1400);
+
+          // Infinite repeats
+          lv_anim_set_repeat_count(&anim, LV_ANIM_REPEAT_INFINITE);
+
+          // Playback time for reverse (fade in): 1400ms
+          lv_anim_set_playback_time(&anim, 1400);
+
+          // Execution callback: update opacity
+          lv_anim_set_exec_cb(&anim, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+
+          // Linear path for smooth fade
+          lv_anim_set_path_cb(&anim, lv_anim_path_linear);
+
+          // Start the animation
+          lv_anim_start(&anim);
+
+# New: Fast blink (e.g., 1000ms full cycle—adjust times as needed)
+  - id: fast_blink_room_icon
+    then:
+      - lambda: |-
+          // Initialize the animation structure
+          lv_anim_t anim;
+          lv_anim_init(&anim);
+
+          // Set the target widget
+          lv_anim_set_var(&anim, id(circle_home_widget_icon));
+
+          // Animate opacity from 255 (visible) to 0 (invisible)
+          lv_anim_set_values(&anim, 255, 0);
+
+          // Time for one way (fade out): 500ms (half of full 1000ms blink cycle)
+          lv_anim_set_time(&anim, 500);
+
+          // Infinite repeats
+          lv_anim_set_repeat_count(&anim, LV_ANIM_REPEAT_INFINITE);
+
+          // Playback time for reverse (fade in): 500ms
+          lv_anim_set_playback_time(&anim, 500);
+
+          // Execution callback: update opacity
+          lv_anim_set_exec_cb(&anim, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+
+          // Linear path for smooth fade (or change to lv_anim_path_ease_in_out for easing)
+          lv_anim_set_path_cb(&anim, lv_anim_path_linear);
+
+          // Start the animation
+          lv_anim_start(&anim);
+
+  # Renamed stop script (deletes all animations on the widget)
+  - id: stop_blink_room_icon
+    then:
+      - lambda: |-
+          // Delete the animation for the target widget
+          lv_anim_del(id(circle_home_widget_icon), nullptr);  // Replace with your widget ID
+
   # Main script for switching modes
   - id: switch_to_mode
     parameters:

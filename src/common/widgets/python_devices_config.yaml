@@ -31,3 +31,5 @@ widgets:
     page: gate_page
   - name: "Locks"
     page: locks_page
+  - name: "Mediaplayer"
+    page: media_player_page

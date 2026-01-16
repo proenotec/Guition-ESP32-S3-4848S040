@@ -47,11 +47,42 @@ script:
     then:
       - lambda: |-
           ESP_LOGD("PageManager", "Cleanup for page: %s", page_name.c_str());
+          ESP_LOGD("PageManager", "previous_lvgl_page: %s", id(previous_lvgl_page).c_str());
+          ESP_LOGD("PageManager", "active_lvgl_page: %s", id(active_lvgl_page).c_str());
 
-          // Ejemplo: Detener scripts específicos de cada página
-          if (page_name == "texto_page") {
+          // Detener scripts específicos de cada página
+          if ((page_name == "texto_page") || (id(active_lvgl_page) == "texto_page")) {
             if (id(cycle_texto_page_climates).is_running()) {
               id(cycle_texto_page_climates).stop();
             }
           }
+          // Ocultar widget de luz si salimos de light_control_page
+          else if ((page_name == "light_control_page") || (id(active_lvgl_page) == "light_control_page")) {
+            auto widget = id(light_select_widget);
+            if (widget != nullptr) {
+              lv_obj_add_flag(widget, LV_OBJ_FLAG_HIDDEN);
+            }
+          }
+          // Ocultar widget de persianas si salimos de cover_page
+          else if ((page_name == "cover_page") || (id(active_lvgl_page) == "cover_page")) {
+            auto widget = id(cover_select_widget);
+            if (widget != nullptr) {
+              lv_obj_add_flag(widget, LV_OBJ_FLAG_HIDDEN);
+            }
+          }
+          // Ocultar widget de termostatos si salimos de therm_page
+          else if ((page_name == "therm_page") || (id(active_lvgl_page) == "therm_page")) {
+            auto widget = id(thermo_select_widget);
+            if (widget != nullptr) {
+              lv_obj_add_flag(widget, LV_OBJ_FLAG_HIDDEN);
+            }
+          }
+          // Ocultar widget de ventiladores si salimos de fan_page
+          else if ((page_name == "fan_page") || (id(active_lvgl_page) == "fan_page")) {
+            auto widget = id(fan_select_widget);
+            if (widget != nullptr) {
+              lv_obj_add_flag(widget, LV_OBJ_FLAG_HIDDEN);
+            }
+          }
+
           // Añadir más cleanups según necesites

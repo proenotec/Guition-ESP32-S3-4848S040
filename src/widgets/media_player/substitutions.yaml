@@ -1,2 +1,17 @@
 ha_server: "http://homeassistant.local:8123"
 media_player_entity: "media_player.googlehome5999"
+
+power_icon:                 "\U000F0906" # on/off
+play_icon:                  "\U000F040A"
+pause_icon:                 "\U000F03E4"
+stop_icon:                  "\U000F04DB"
+previous_track_icon:        "\U000F04AE"
+next_track_icon:            "\U000F04AD"
+volume_off_icon:            "\U000F0581"
+volume_on_icon:             "\U000F057E"
+volume_minus_icon:          "\U000F075E"
+volume_plus_icon:           "\U000F075D"
+repeat_all_icon:            "\U000F0456"
+repeat_off_icon:            "\U000F0457"
+repeat_one_icon:            "\U000F0458"
+media_source:               "\U000F0206"

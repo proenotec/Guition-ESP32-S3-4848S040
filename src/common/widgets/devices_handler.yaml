@@ -38,3 +38,8 @@
       lambda: return x == id(btn_locks);
     then:
     - lvgl.page.show: locks_page
+- if:
+    condition:
+      lambda: return x == id(btn_mediaplayer);
+    then:
+    - lvgl.page.show: media_player_page

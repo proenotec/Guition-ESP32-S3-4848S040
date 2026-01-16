@@ -407,15 +407,15 @@
 #    "\U000F040A", # play
     "\U000F03E4", # pause
     "\U000F04DB", # stop
-#    "\U000F0906", # power
-#    "\U000F0456", # repeat
-#    "\U000F0457", # repeat off
-#    "\U000F0458", # repeat once
-#    "\U000F0206", # media source
-#    "\U000F057E", # volume on
-#    "\U000F0581", # volume off
-#    "\U000F075E", # volume minus
-#    "\U000F075D", # volume plus
+    "\U000F0906", # power
+    "\U000F0456", # repeat
+    "\U000F0457", # repeat off
+    "\U000F0458", # repeat once
+    "\U000F0206", # media source
+    "\U000F057E", # volume on
+    "\U000F0581", # volume off
+    "\U000F075E", # volume minus
+    "\U000F075D", # volume plus
     "\U000F05F8", # home locate
     "\U000F0A77", # target variant
     "\U000F034E", # map marker
@@ -467,8 +467,8 @@
 #    "\U000F0483", # shield custom
 #    "\U000F099E", # shield off
 #    "\U000F0498", # shield
-#    "\U000F04AE", # previous track
-#    "\U000F04AD", # next track
+    "\U000F04AE", # previous track
+    "\U000F04AD", # next track
     "\U000F19B2", # arrow up
     "\U000F19B3", # arrow down
     "\U000F1846", # curtains_opened

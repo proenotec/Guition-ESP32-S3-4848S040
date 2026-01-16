@@ -90,7 +90,6 @@ lvgl:
 
 
 script:
-
   - id: update_loading_page
     then:
       - lvgl.label.update:

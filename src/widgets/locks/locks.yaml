@@ -195,6 +195,7 @@ button:
   - platform: template
     name: "Main Door Lock/Unlock"
     id: main_door_toggle
+    internal: true
     icon: "mdi:lock"
     on_press:
       - logger.log: "Main door toggle button pressed"
@@ -271,6 +272,7 @@ button:
   - platform: template
     name: "Main Door Unlatch"
     id: main_door_unlatch
+    internal: true
     icon: "mdi:door-open"
     on_press:
       - logger.log: "Main door unlatch button pressed"
@@ -296,6 +298,7 @@ button:
   - platform: template
     name: "Back Door Lock/Unlock"
     id: back_door_toggle
+    internal: true
     icon: "mdi:lock"
     on_press:
       - logger.log: "Back door toggle button pressed"
@@ -374,6 +377,7 @@ number:
   - platform: template
     name: "Permite Candado2"
     id: progress_value2
+    internal: true
     min_value: 0
     max_value: 100
     step: 1

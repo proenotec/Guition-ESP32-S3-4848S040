@@ -49,6 +49,9 @@
       Locks
 
       '
-  - text: ''
-    control:
-      hidden: true
+  - id: btn_mediaplayer
+    text: '
+
+      Mediaplayer
+
+      '
