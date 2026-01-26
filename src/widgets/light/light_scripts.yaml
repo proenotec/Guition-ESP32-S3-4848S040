@@ -186,31 +186,59 @@ script:
             switch (index) {
               case 1:
                 is_on = id(light_state_1).state;
-                if (id(light_brightness_1).has_state()) brightness = id(light_brightness_1).state;
+                if (id(light_brightness_1).has_state() && !std::isnan(id(light_brightness_1).state)) {
+                  brightness = id(light_brightness_1).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
               case 2:
                 is_on = id(light_state_2).state;
-                if (id(light_brightness_2).has_state()) brightness = id(light_brightness_2).state;
+                if (id(light_brightness_2).has_state() && !std::isnan(id(light_brightness_2).state)) {
+                  brightness = id(light_brightness_2).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
               case 3:
                 is_on = id(light_state_3).state;
-                if (id(light_brightness_3).has_state()) brightness = id(light_brightness_3).state;
+                if (id(light_brightness_3).has_state() && !std::isnan(id(light_brightness_3).state)) {
+                  brightness = id(light_brightness_3).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
               case 4:
                 is_on = id(light_state_4).state;
-                if (id(light_brightness_4).has_state()) brightness = id(light_brightness_4).state;
+                if (id(light_brightness_4).has_state() && !std::isnan(id(light_brightness_4).state)) {
+                  brightness = id(light_brightness_4).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
               case 5:
                 is_on = id(light_state_5).state;
-                if (id(light_brightness_5).has_state()) brightness = id(light_brightness_5).state;
+                if (id(light_brightness_5).has_state() && !std::isnan(id(light_brightness_5).state)) {
+                  brightness = id(light_brightness_5).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
               case 6:
                 is_on = id(light_state_6).state;
-                if (id(light_brightness_6).has_state()) brightness = id(light_brightness_6).state;
+                if (id(light_brightness_6).has_state() && !std::isnan(id(light_brightness_6).state)) {
+                  brightness = id(light_brightness_6).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
               case 7:
                 is_on = id(light_state_7).state;
-                if (id(light_brightness_7).has_state()) brightness = id(light_brightness_7).state;
+                if (id(light_brightness_7).has_state() && !std::isnan(id(light_brightness_7).state)) {
+                  brightness = id(light_brightness_7).state;
+                } else {
+                  brightness = 255; // Default to full brightness if None
+                }
                 break;
             }
 
@@ -271,25 +299,39 @@ script:
             } else if (supports_temp) {
               switch (index) {
                 case 1:
-                  if (id(light_color_temp_1).has_state()) temp = id(light_color_temp_1).state;
+                  if (id(light_color_temp_1).has_state() && !std::isnan(id(light_color_temp_1).state)) {
+                    temp = id(light_color_temp_1).state;
+                  }
                   break;
                 case 2:
-                  if (id(light_color_temp_2).has_state()) temp = id(light_color_temp_2).state;
+                  if (id(light_color_temp_2).has_state() && !std::isnan(id(light_color_temp_2).state)) {
+                    temp = id(light_color_temp_2).state;
+                  }
                   break;
                 case 3:
-                  if (id(light_color_temp_3).has_state()) temp = id(light_color_temp_3).state;
+                  if (id(light_color_temp_3).has_state() && !std::isnan(id(light_color_temp_3).state)) {
+                    temp = id(light_color_temp_3).state;
+                  }
                   break;
                 case 4:
-                  if (id(light_color_temp_4).has_state()) temp = id(light_color_temp_4).state;
+                  if (id(light_color_temp_4).has_state() && !std::isnan(id(light_color_temp_4).state)) {
+                    temp = id(light_color_temp_4).state;
+                  }
                   break;
                 case 5:
-                  if (id(light_color_temp_5).has_state()) temp = id(light_color_temp_5).state;
+                  if (id(light_color_temp_5).has_state() && !std::isnan(id(light_color_temp_5).state)) {
+                    temp = id(light_color_temp_5).state;
+                  }
                   break;
                 case 6:
-                  if (id(light_color_temp_6).has_state()) temp = id(light_color_temp_6).state;
+                  if (id(light_color_temp_6).has_state() && !std::isnan(id(light_color_temp_6).state)) {
+                    temp = id(light_color_temp_6).state;
+                  }
                   break;
                 case 7:
-                  if (id(light_color_temp_7).has_state()) temp = id(light_color_temp_7).state;
+                  if (id(light_color_temp_7).has_state() && !std::isnan(id(light_color_temp_7).state)) {
+                    temp = id(light_color_temp_7).state;
+                  }
                   break;
               }
               is_temp_mode_local = true;

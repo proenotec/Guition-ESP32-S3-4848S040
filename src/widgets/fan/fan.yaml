@@ -867,7 +867,6 @@ lvgl:
       bg_color: color_black
       scrollable: false
       on_load:
-        # ✅ Método centralizado
         - script.execute:
             id: set_active_page
             page_name: "fan_page"
@@ -876,11 +875,7 @@ lvgl:
             if (fans >= 2) {
               lv_obj_clear_flag(id(fan_select_widget), LV_OBJ_FLAG_HIDDEN);
             }
-        # Optional: Add a short delay if needed for smooth transitions
-        # - delay: 250ms  # Uncomment if you see flickering
-        - script.execute:
-            id: fan_set_index
-            index: 1
+        - script.execute: fan_refresh_current
 
       widgets:
         - label:
@@ -1490,6 +1485,74 @@ lvgl:
               - lvgl.page.show: home_page
 
 script:
+  # ✅ NUEVO SCRIPT: Refrescar ventilador actual sin cambiar el índice
+  - id: fan_refresh_current
+    then:
+      - lambda: |-
+          int idx = id(current_fan_index);
+          const int num = ${fans_amount};
+
+          // Asegurarse de que el índice es válido
+          if (idx < 1 || idx > num) {
+            idx = 1;
+            id(current_fan_index) = idx;
+          }
+
+          std::string entity = "";
+          std::string name = "";
+
+          switch (idx) {
+            case 1:
+              entity = "${fan_entity_1}";
+              name = id(fan_name_1_stored);
+              break;
+            case 2:
+              entity = "${fan_entity_2}";
+              name = id(fan_name_2_stored);
+              break;
+          }
+
+          id(current_fan_entity) = entity;
+
+          if (!name.empty()) {
+            lv_label_set_text(id(fan_name_label), name.c_str());
+          }
+
+          ESP_LOGD("fan_refresh", "Refreshing current fan index %d: %s (%s)",
+                   idx, name.c_str(), entity.c_str());
+
+          // Actualizar botones de selección
+          lv_obj_set_style_bg_opa(id(fan_btn_1), LV_OPA_TRANSP, 0);
+          lv_obj_set_style_bg_opa(id(fan_btn_2), LV_OPA_TRANSP, 0);
+
+          lv_obj_set_style_text_color(id(fan_icon_label_1), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(fan_icon_label_2), color_misty_blue, 0);
+
+          switch (idx) {
+            case 1:
+              lv_obj_set_style_bg_opa(id(fan_btn_1), LV_OPA_COVER, 0);
+              lv_obj_set_style_bg_color(id(fan_btn_1), color_steel_blue, 0);
+              lv_obj_set_style_text_color(id(fan_icon_label_1), color_white, 0);
+              break;
+            case 2:
+              lv_obj_set_style_bg_opa(id(fan_btn_2), LV_OPA_COVER, 0);
+              lv_obj_set_style_bg_color(id(fan_btn_2), color_steel_blue, 0);
+              lv_obj_set_style_text_color(id(fan_icon_label_2), color_white, 0);
+              break;
+          }
+
+          // Forzar actualización de sensores agregados
+          if (id(fan_sensor_percentage).has_state()) {
+            id(fan_sensor_percentage).publish_state(id(fan_sensor_percentage).state);
+          }
+          if (id(fan_sensor_supported_features).has_state()) {
+            id(fan_sensor_supported_features).publish_state(id(fan_sensor_supported_features).state);
+          }
+          if (id(fan_sensor_percentage_step).has_state()) {
+            id(fan_sensor_percentage_step).publish_state(id(fan_sensor_percentage_step).state);
+          }
+          id(fan_state_sensor).publish_state(id(fan_state_sensor).state);
+
   # Script to cycle through fans
   - id: fan_cycle
     then:

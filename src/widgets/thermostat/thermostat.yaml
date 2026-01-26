@@ -1120,19 +1120,20 @@ lvgl:
         - script.execute:
             id: set_active_page
             page_name: "therm_page"
-        - script.execute:
-            id: cycle_climate
-            position: 1
+        #- script.execute:
+        #    id: cycle_climate
+        #    position: 1
         - lambda: |-
             int num_climates = ${climates_amount};
             if (num_climates >= 2) {
               lv_obj_clear_flag(id(thermo_select_widget), LV_OBJ_FLAG_HIDDEN);
             }
+        - script.execute: thermostat_cycle_refresh
         # Optional: Add a short delay if needed for smooth transitions
         # - delay: 250ms  # Uncomment if you see flickering
-        - script.execute:
-            id: cycle_climate
-            position: 1
+        #- script.execute:
+        #    id: cycle_climate
+        #    position: 1
       widgets:
         # Climate name label (updated via script)
         - label:
@@ -1919,6 +1920,229 @@ lvgl:
 #          # - delay: 250ms  # Uncomment if you see flickering
 
 script:
+  - id: thermostat_cycle_refresh
+    mode: restart
+    then:
+      - delay: 500ms
+      - lambda: |-
+          int idx = id(current_climate_index);
+          ESP_LOGD("CYCLE_REFRESH", "Manually publishing templates for index %d", idx);
+
+          // ✅ AGREGAR: Actualizar botones de selección
+          lv_obj_set_style_bg_opa(id(climate_btn_1), LV_OPA_TRANSP, 0);
+          lv_obj_set_style_bg_opa(id(climate_btn_2), LV_OPA_TRANSP, 0);
+          lv_obj_set_style_bg_opa(id(climate_btn_3), LV_OPA_TRANSP, 0);
+          lv_obj_set_style_bg_opa(id(climate_btn_4), LV_OPA_TRANSP, 0);
+
+          lv_obj_set_style_text_color(id(thermo_icon_1), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermo_icon_2), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermo_icon_3), color_misty_blue, 0);
+          lv_obj_set_style_text_color(id(thermo_icon_4), color_misty_blue, 0);
+
+          switch (idx) {
+            case 1:
+              lv_obj_set_style_bg_opa(id(climate_btn_1), LV_OPA_COVER, 0);
+              lv_obj_set_style_bg_color(id(climate_btn_1), color_steel_blue, 0);
+              lv_obj_set_style_text_color(id(thermo_icon_1), color_white, 0);
+              break;
+            case 2:
+              lv_obj_set_style_bg_opa(id(climate_btn_2), LV_OPA_COVER, 0);
+              lv_obj_set_style_bg_color(id(climate_btn_2), color_steel_blue, 0);
+              lv_obj_set_style_text_color(id(thermo_icon_2), color_white, 0);
+              break;
+            case 3:
+              lv_obj_set_style_bg_opa(id(climate_btn_3), LV_OPA_COVER, 0);
+              lv_obj_set_style_bg_color(id(climate_btn_3), color_steel_blue, 0);
+              lv_obj_set_style_text_color(id(thermo_icon_3), color_white, 0);
+              break;
+            case 4:
+              lv_obj_set_style_bg_opa(id(climate_btn_4), LV_OPA_COVER, 0);
+              lv_obj_set_style_bg_color(id(climate_btn_4), color_steel_blue, 0);
+              lv_obj_set_style_text_color(id(thermo_icon_4), color_white, 0);
+              break;
+          }
+
+          // Actualizar nombre
+          std::string name = "";
+          switch (idx) {
+            case 1: name = id(thermostat_name_1_stored); break;
+            case 2: name = id(thermostat_name_2_stored); break;
+            case 3: name = id(thermostat_name_3_stored); break;
+            case 4: name = id(thermostat_name_4_stored); break;
+            default: name = "Thermostat";
+          }
+          if (!name.empty()) {
+            lv_label_set_text(id(thermostat_name_label), name.c_str());
+          }
+
+          // Target temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_target_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_target_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_target_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_target_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_target_temp).publish_state(val.value());
+            }
+          }
+
+          // Target temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_target_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_target_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_target_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_target_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_target_temp).publish_state(val.value());
+            }
+          }
+
+          // Current temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_current_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_current_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_current_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_current_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_current_temp).publish_state(val.value());
+            }
+          }
+
+          // Min temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_min_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_min_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_min_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_min_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_min_temp).publish_state(val.value());
+            }
+          }
+
+          // Max temp
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_max_temp_1).state; break;
+              case 2: val = id(thermostat_sensor_max_temp_2).state; break;
+              case 3: val = id(thermostat_sensor_max_temp_3).state; break;
+              case 4: val = id(thermostat_sensor_max_temp_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_max_temp).publish_state(val.value());
+            }
+          }
+
+          // Target temp step
+          {
+            optional<float> val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_target_temp_step_1).state; break;
+              case 2: val = id(thermostat_sensor_target_temp_step_2).state; break;
+              case 3: val = id(thermostat_sensor_target_temp_step_3).state; break;
+              case 4: val = id(thermostat_sensor_target_temp_step_4).state; break;
+            }
+            if (val.has_value()) {
+              id(thermostat_sensor_target_temp_step).publish_state(val.value());
+            }
+          }
+
+          // HVAC state
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_state_1).state; break;
+              case 2: val = id(thermostat_sensor_state_2).state; break;
+              case 3: val = id(thermostat_sensor_state_3).state; break;
+              case 4: val = id(thermostat_sensor_state_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_sensor_state).publish_state(val);
+            }
+          }
+
+          // HVAC action
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_sensor_hvac_action_1).state; break;
+              case 2: val = id(thermostat_sensor_hvac_action_2).state; break;
+              case 3: val = id(thermostat_sensor_hvac_action_3).state; break;
+              case 4: val = id(thermostat_sensor_hvac_action_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_sensor_hvac_action).publish_state(val);
+            }
+          }
+
+          // HVAC modes
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_hvac_modes_1).state; break;
+              case 2: val = id(thermostat_hvac_modes_2).state; break;
+              case 3: val = id(thermostat_hvac_modes_3).state; break;
+              case 4: val = id(thermostat_hvac_modes_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_hvac_modes).publish_state(val);
+            }
+          }
+
+          // Preset modes
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_preset_modes_1).state; break;
+              case 2: val = id(thermostat_preset_modes_2).state; break;
+              case 3: val = id(thermostat_preset_modes_3).state; break;
+              case 4: val = id(thermostat_preset_modes_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_preset_modes).publish_state(val);
+            }
+          }
+
+          // Current preset mode
+          {
+            std::string val;
+            switch (idx) {
+              case 1: val = id(thermostat_preset_mode_1).state; break;
+              case 2: val = id(thermostat_preset_mode_2).state; break;
+              case 3: val = id(thermostat_preset_mode_3).state; break;
+              case 4: val = id(thermostat_preset_mode_4).state; break;
+            }
+            if (!val.empty()) {
+              id(thermostat_preset_mode).publish_state(val);
+            }
+          }
+
+          // Trigger arc range init if needed (min/max now published)
+          if (!id(thermostat_arc_range_initialized)) {
+            id(thermostat_update_arc_temp_range).execute();
+          }
+
+      - script.execute: thermostat_get_current_values
+      - script.execute: thermostat_update_active_arc_layer
+      - script.execute: thermostat_update_segments
+      - script.execute: thermostat_update_mode_buttons_visibility
+      - script.execute: thermostat_update_preset_buttons_visibility
+      - script.execute: thermostat_update_adjust_buttons_color
+      - script.execute: update_thermostat_window_display
+
+
   # Consolidated state handler (replaces repeated if-blocks)
   - id: thermostat_handle_state_change
     then:
@@ -2186,167 +2410,6 @@ script:
           static const char* window_icons[] = {"\U000F11DB", "\U000F11DC"}; // cerrada, abierta
 
           lv_label_set_text(id(thermostat_window_label), window_icons[window_icon_idx]);
-
-  - id: thermostat_cycle_refresh
-    mode: restart
-    then:
-      - delay: 500ms
-      - lambda: |-
-          int idx = id(current_climate_index);
-          ESP_LOGD("CYCLE_REFRESH", "Manually publishing templates for index %d", idx);
-
-          // Target temp
-          {
-            optional<float> val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_target_temp_1).state; break;
-              case 2: val = id(thermostat_sensor_target_temp_2).state; break;
-              case 3: val = id(thermostat_sensor_target_temp_3).state; break;
-              case 4: val = id(thermostat_sensor_target_temp_4).state; break;
-            }
-            if (val.has_value()) {
-              id(thermostat_sensor_target_temp).publish_state(val.value());
-            }
-          }
-
-          // Current temp
-          {
-            optional<float> val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_current_temp_1).state; break;
-              case 2: val = id(thermostat_sensor_current_temp_2).state; break;
-              case 3: val = id(thermostat_sensor_current_temp_3).state; break;
-              case 4: val = id(thermostat_sensor_current_temp_4).state; break;
-            }
-            if (val.has_value()) {
-              id(thermostat_sensor_current_temp).publish_state(val.value());
-            }
-          }
-
-          // Min temp
-          {
-            optional<float> val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_min_temp_1).state; break;
-              case 2: val = id(thermostat_sensor_min_temp_2).state; break;
-              case 3: val = id(thermostat_sensor_min_temp_3).state; break;
-              case 4: val = id(thermostat_sensor_min_temp_4).state; break;
-            }
-            if (val.has_value()) {
-              id(thermostat_sensor_min_temp).publish_state(val.value());
-            }
-          }
-
-          // Max temp
-          {
-            optional<float> val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_max_temp_1).state; break;
-              case 2: val = id(thermostat_sensor_max_temp_2).state; break;
-              case 3: val = id(thermostat_sensor_max_temp_3).state; break;
-              case 4: val = id(thermostat_sensor_max_temp_4).state; break;
-            }
-            if (val.has_value()) {
-              id(thermostat_sensor_max_temp).publish_state(val.value());
-            }
-          }
-
-          // Target temp step
-          {
-            optional<float> val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_target_temp_step_1).state; break;
-              case 2: val = id(thermostat_sensor_target_temp_step_2).state; break;
-              case 3: val = id(thermostat_sensor_target_temp_step_3).state; break;
-              case 4: val = id(thermostat_sensor_target_temp_step_4).state; break;
-            }
-            if (val.has_value()) {
-              id(thermostat_sensor_target_temp_step).publish_state(val.value());
-            }
-          }
-
-          // HVAC state
-          {
-            std::string val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_state_1).state; break;
-              case 2: val = id(thermostat_sensor_state_2).state; break;
-              case 3: val = id(thermostat_sensor_state_3).state; break;
-              case 4: val = id(thermostat_sensor_state_4).state; break;
-            }
-            if (!val.empty()) {
-              id(thermostat_sensor_state).publish_state(val);
-            }
-          }
-
-          // HVAC action
-          {
-            std::string val;
-            switch (idx) {
-              case 1: val = id(thermostat_sensor_hvac_action_1).state; break;
-              case 2: val = id(thermostat_sensor_hvac_action_2).state; break;
-              case 3: val = id(thermostat_sensor_hvac_action_3).state; break;
-              case 4: val = id(thermostat_sensor_hvac_action_4).state; break;
-            }
-            if (!val.empty()) {
-              id(thermostat_sensor_hvac_action).publish_state(val);
-            }
-          }
-
-          // HVAC modes
-          {
-            std::string val;
-            switch (idx) {
-              case 1: val = id(thermostat_hvac_modes_1).state; break;
-              case 2: val = id(thermostat_hvac_modes_2).state; break;
-              case 3: val = id(thermostat_hvac_modes_3).state; break;
-              case 4: val = id(thermostat_hvac_modes_4).state; break;
-            }
-            if (!val.empty()) {
-              id(thermostat_hvac_modes).publish_state(val);
-            }
-          }
-
-          // Preset modes
-          {
-            std::string val;
-            switch (idx) {
-              case 1: val = id(thermostat_preset_modes_1).state; break;
-              case 2: val = id(thermostat_preset_modes_2).state; break;
-              case 3: val = id(thermostat_preset_modes_3).state; break;
-              case 4: val = id(thermostat_preset_modes_4).state; break;
-            }
-            if (!val.empty()) {
-              id(thermostat_preset_modes).publish_state(val);
-            }
-          }
-
-          // Current preset mode
-          {
-            std::string val;
-            switch (idx) {
-              case 1: val = id(thermostat_preset_mode_1).state; break;
-              case 2: val = id(thermostat_preset_mode_2).state; break;
-              case 3: val = id(thermostat_preset_mode_3).state; break;
-              case 4: val = id(thermostat_preset_mode_4).state; break;
-            }
-            if (!val.empty()) {
-              id(thermostat_preset_mode).publish_state(val);
-            }
-          }
-
-          // Trigger arc range init if needed (min/max now published)
-          if (!id(thermostat_arc_range_initialized)) {
-            id(thermostat_update_arc_temp_range).execute();
-          }
-
-      - script.execute: thermostat_get_current_values
-      - script.execute: thermostat_update_active_arc_layer
-      - script.execute: thermostat_update_segments
-      - script.execute: thermostat_update_mode_buttons_visibility
-      - script.execute: thermostat_update_preset_buttons_visibility
-      - script.execute: thermostat_update_adjust_buttons_color
-      - script.execute: update_thermostat_window_display
 
   - id: thermostat_get_current_values
     then:

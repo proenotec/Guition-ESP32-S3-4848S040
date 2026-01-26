@@ -576,9 +576,10 @@ lvgl:
             if (covers >= 2) {
               lv_obj_clear_flag(id(cover_select_widget), LV_OBJ_FLAG_HIDDEN);
             }
-        - script.execute:
-            id: cycle_cover
-            position: 1
+        - script.execute: cover_cycle_refresh
+        #- script.execute:
+        #    id: cycle_cover
+        #    position: 1
       widgets:
         - label:
             id: cover_name_label

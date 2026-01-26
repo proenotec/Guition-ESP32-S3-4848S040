@@ -37,7 +37,8 @@ lvgl:
     - script.execute: light_init
     - lvgl.obj.update:
         id: light_btn_1
-        shadow_color: color_misty_blue
+        bg_opa: cover
+        bg_color: color_steel_blue
     - delay: 1s
     - script.execute: light_update_all_selector_icons
   top_layer:
@@ -106,25 +107,26 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_black
+                    bg_opa: transp
             - obj:
                 id: light_btn_2
                 width: 48
@@ -153,25 +155,26 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_black
+                    bg_opa: transp
             - obj:
                 id: light_btn_3
                 width: 48
@@ -200,25 +203,26 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_black
+                    bg_opa: transp
             - obj:
                 id: light_btn_4
                 width: 48
@@ -247,25 +251,26 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_black
+                    bg_opa: transp
             - obj:
                 id: light_btn_5
                 width: 48
@@ -294,25 +299,26 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_black
+                    bg_opa: transp
             - obj:
                 id: light_btn_6
                 width: 48
@@ -341,25 +347,26 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_black
+                    bg_opa: transp
             - obj:
                 id: light_btn_7
                 width: 48
@@ -388,38 +395,37 @@ lvgl:
                 - lvgl.page.show: light_control_page
                 - lvgl.obj.update:
                     id: light_btn_1
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_2
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_3
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_4
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_5
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_6
-                    shadow_color: color_black
+                    bg_opa: transp
                 - lvgl.obj.update:
                     id: light_btn_7
-                    shadow_color: color_misty_blue
+                    bg_opa: cover
+                    bg_color: color_steel_blue
   pages:
   - id: light_control_page
     bg_color: color_slate_blue_gray
     on_load:
-        # ✅ Método centralizado
-        - script.execute:
-            id: set_active_page
-            page_name: "light_control_page"
-        - script.execute: light_update_layout
-        - delay: 200ms
-        - script.execute: light_update_lightbulb_color
-        - script.execute: light_update_button_icon_color
-
+    - script.execute:
+        id: set_active_page
+        page_name: light_control_page
+    - script.execute: light_update_layout
+    - delay: 200ms
+    - script.execute: light_update_lightbulb_color
+    - script.execute: light_update_button_icon_color
     widgets:
     - obj:
         id: light_brightness_background
@@ -769,9 +775,9 @@ lvgl:
             shadow_opa: transp
             radius: 15
         on_click:
-            - lvgl.widget.hide: light_select_widget
-            - delay: 100ms
-            - script.execute:
-                id: page_cleanup
-                page_name: "light_control_pagelocks_page"
-            - lvgl.page.show: home_page
+        - lvgl.widget.hide: light_select_widget
+        - delay: 100ms
+        - script.execute:
+            id: page_cleanup
+            page_name: light_control_page
+        - lvgl.page.show: home_page

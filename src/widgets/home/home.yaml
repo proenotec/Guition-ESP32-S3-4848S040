@@ -429,24 +429,6 @@ text_sensor:
             id: esphome_version_info_state
             text: !lambda 'return id(esphome_version).state;'
 
-#lvgl:
-#  on_idle:
-#    timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
-#    then:
-#      - if:
-#          condition:
-#            lambda: 'return id(display_timeout_backlight).state >= 0;'
-#          then:
-#            - logger.log: "LVGL is idle - activating screensaver"
-#            # Activar el salvapantallas en lugar de solo apagar
-#            - script.execute: activate_screensaver
-#            # Opcional: reducir brillo en lugar de apagar completamente
-#            - light.turn_on:
-#                id: display_backlight
-#                brightness: 30%  # Brillo bajo para el salvapantallas
-#          else:
-#            - logger.log: "LVGL idle, but backlight timeout disabled"
-
 lvgl:
   on_idle:
     timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
@@ -455,11 +437,29 @@ lvgl:
           condition:
             lambda: 'return id(display_timeout_backlight).state >= 0;'
           then:
-            - logger.log: "LVGL is idle"
-            - light.turn_off: display_backlight
-            - script.execute: pause_lvgl_display  # ✅ Use centralized script
+            - logger.log: "LVGL is idle - activating screensaver"
+            # Activar el salvapantallas en lugar de solo apagar
+            - script.execute: activate_screensaver
+            # Opcional: reducir brillo en lugar de apagar completamente
+            - light.turn_on:
+                id: display_backlight
+                brightness: 60%  # Brillo bajo para el salvapantallas
           else:
-            - logger.log: "LVGL idle, but backlight is on"
+            - logger.log: "LVGL idle, but backlight timeout disabled"
+
+#lvgl:
+#  on_idle:
+#    timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
+#    then:
+#      - if:
+#          condition:
+#            lambda: 'return id(display_timeout_backlight).state >= 0;'
+#          then:
+#            - logger.log: "LVGL is idle"
+#            - light.turn_off: display_backlight
+#            - script.execute: pause_lvgl_display  # ✅ Use centralized script
+#          else:
+#            - logger.log: "LVGL idle, but backlight is on"
 
   pages:
     - id: home_page
@@ -585,7 +585,7 @@ lvgl:
                         align: top_right
                         text_font: nunito_18
                         text_color: color_misty_blue
-                        text: " "
+                        text: ""
                         text_align: right
 
                     # - label:
@@ -610,12 +610,12 @@ lvgl:
 
                     - label:
                         id: weather_wind_speed_value
-                        x: -90
+                        x: -100
                         y: 40
                         align: top_right
                         text_font: nunito_18
                         text_color: color_misty_blue
-                        text: " "
+                        text: ""
                         text_align: right
 
                     - label:
@@ -625,7 +625,7 @@ lvgl:
                         align: top_right
                         text_font: nunito_18
                         text_color: color_misty_blue
-                        text: " "
+                        text: ""
                         text_align: right
 
                     # - label:
@@ -731,7 +731,7 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         long_mode: SCROLL_CIRCULAR
-                        text: " "
+                        text: ""
                         text_align: center
 
               - obj:
@@ -1410,13 +1410,11 @@ lvgl:
                         text: "${brightness_icon}"
                   on_click:
                     - delay: 1s
-                    #- light.turn_off: display_backlight
-                    #- script.execute: pause_lvgl_display
                     - script.execute: activate_screensaver
                     # Reducir brillo
                     - light.turn_on:
                         id: display_backlight
-                        brightness: 30%  # Brillo bajo para el salvapantallas
+                        brightness: 50%  # Brillo bajo para el salvapantallas
               - button:
                   id: home_widget_btn
                   clickable: true
@@ -1778,11 +1776,11 @@ lvgl:
             width: 480
             height: 480
             align: TOP_LEFT
-            clickable: true
+            #clickable: true
             bg_opa: TRANSP
             border_opa: TRANSP
-            on_click:
-              - script.execute: exit_screensaver
+            #on_click:
+            #  - script.execute: exit_screensaver
             widgets:
               - label:
                   id: screensaver_time
@@ -2227,7 +2225,7 @@ script:
 ####### FORECASTS ########
 
   # ========================================
-  # 1️⃣ PARSE DAILY FORECASTS (WITHOUT CHANGES)
+  # 1️⃣ PARSE DAILY FORECASTS
   # ========================================
   - id: parse_daily_forecasts
     then:
@@ -2314,7 +2312,7 @@ script:
       - script.execute: update_daily_display
 
   # ========================================
-  # 2️⃣ PARSE HOURLY FORECASTS (FIXED)
+  # 2️⃣ PARSE HOURLY FORECASTS
   # ========================================
   - id: parse_hourly_forecasts
     then:
@@ -2400,7 +2398,7 @@ script:
       - script.execute: update_hourly_display
 
   # ========================================
-  # 3️⃣ UPDATE DAILY DISPLAY (FIXED)
+  # 3️⃣ UPDATE DAILY DISPLAY
   # ========================================
   - id: update_daily_display
     then:
@@ -2503,7 +2501,7 @@ script:
           }
 
   # ========================================
-  # 4️⃣ UPDATE HOURLY DISPLAY (FIXED)
+  # 4️⃣ UPDATE HOURLY DISPLAY
   # ========================================
   - id: update_hourly_display
     then:
@@ -2677,13 +2675,19 @@ script:
           id: screensaver_date
           text: !lambda |-
             auto now = id(sntp_time).now();
+            const char* day_keys[] = {"day_of_week.sunday", "day_of_week.monday", "day_of_week.tuesday",
+                                      "day_of_week.wednesday", "day_of_week.thursday", "day_of_week.friday",
+                                      "day_of_week.saturday"};
             const char* month_keys[] = {"month.january", "month.february", "month.march", "month.april",
                                         "month.may", "month.june", "month.july", "month.august",
                                         "month.september", "month.october", "month.november", "month.december"};
+            const char* day_key = day_keys[now.day_of_week - 1];
             const char* month_key = month_keys[now.month - 1];
 
-            static char buf[64];
-            snprintf(buf, sizeof(buf), "%02d %s", now.day_of_month,
+            static char buf[128];
+            snprintf(buf, sizeof(buf), "%s, %02d %s",
+                    id(i18n_translations).translate(day_key).c_str(),
+                    now.day_of_month,
                     id(i18n_translations).translate(month_key).c_str());
             return buf;
 

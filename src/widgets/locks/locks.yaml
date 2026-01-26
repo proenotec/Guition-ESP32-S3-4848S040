@@ -191,9 +191,9 @@ sensor:
 # Botones para controlar las cerraduras Nuki
 
 button:
-  # Botón Lock/Unlock para puerta principal
+  # Botón Lock-Unlock para puerta principal
   - platform: template
-    name: "Main Door Lock/Unlock"
+    name: "Main Door Lock-Unlock"
     id: main_door_toggle
     internal: true
     icon: "mdi:lock"
@@ -296,7 +296,7 @@ button:
 
   # Botón Lock/Unlock para puerta trasera
   - platform: template
-    name: "Back Door Lock/Unlock"
+    name: "Back Door Lock-Unlock"
     id: back_door_toggle
     internal: true
     icon: "mdi:lock"
@@ -560,7 +560,7 @@ lvgl:
                   text_font: nunito_16
                   text_color: 0
 
-              # Botón Main Door Lock/Unlock
+              # Botón Main Door Lock-Unlock
               - button:
                   id: md_lock_unlock_btn
                   align: TOP_LEFT
@@ -631,7 +631,7 @@ lvgl:
                   text_font: nunito_16
                   text_color: 0
 
-              # Botón Back Door Lock/Unlock
+              # Botón Back Door Lock-Unlock
               - button:
                   id: bd_lock_unlock_btn
                   align: CENTER

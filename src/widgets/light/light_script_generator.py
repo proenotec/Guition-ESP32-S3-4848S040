@@ -136,7 +136,11 @@ def generate_light_scripts(lights_amount):
     for i in range(1, lights_amount + 1):
         output += f"              case {i}:\n"
         output += f"                is_on = id(light_state_{i}).state;\n"
-        output += f"                if (id(light_brightness_{i}).has_state()) brightness = id(light_brightness_{i}).state;\n"
+        output += f"                if (id(light_brightness_{i}).has_state() && !std::isnan(id(light_brightness_{i}).state)) {{\n"
+        output += f"                  brightness = id(light_brightness_{i}).state;\n"
+        output += f"                }} else {{\n"
+        output += f"                  brightness = 255; // Default to full brightness if None\n"
+        output += f"                }}\n"
         output += f"                break;\n"
 
     output += "            }\n\n"
@@ -188,7 +192,9 @@ def generate_light_scripts(lights_amount):
 
     for i in range(1, lights_amount + 1):
         output += f"                case {i}:\n"
-        output += f"                  if (id(light_color_temp_{i}).has_state()) temp = id(light_color_temp_{i}).state;\n"
+        output += f"                  if (id(light_color_temp_{i}).has_state() && !std::isnan(id(light_color_temp_{i}).state)) {{\n"
+        output += f"                    temp = id(light_color_temp_{i}).state;\n"
+        output += f"                  }}\n"
         output += f"                  break;\n"
 
     output += "              }\n"
@@ -236,7 +242,7 @@ def generate_light_scripts(lights_amount):
     for i in range(1, lights_amount + 1):
         output += f"          lv_obj_set_style_text_color(id(light_icon_{i}), get_icon_color({i}), 0);\n"
 
-    return output  # THIS WAS MISSING!
+    return output
 
 lvgl_output = generate_light_scripts(lights_amount)
 

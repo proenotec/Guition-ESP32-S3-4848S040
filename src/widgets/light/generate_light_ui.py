@@ -33,15 +33,28 @@ def generate_light_button(index, icon_var, lights_amount):
     btn_id = f"light_btn_{index}"
     icon_id = f"light_icon_{index}"
 
-    # Generate shadow_color updates ONLY for active buttons (1 to lights_amount)
-    shadow_updates = []
+    # Generate updates for all buttons
+    # IMPORTANTE: Solo actualizar los fondos de los botones
+    # NO tocar los colores de los iconos - los maneja light_update_all_selector_icons
+    button_updates = []
     for i in range(1, lights_amount + 1):
-        shadow_updates.append({
-            'lvgl.obj.update': {
-                'id': f'light_btn_{i}',
-                'shadow_color': 'color_misty_blue' if i == index else 'color_black'
-            }
-        })
+        if i == index:
+            # Selected button: solid background ONLY
+            button_updates.append({
+                'lvgl.obj.update': {
+                    'id': f'light_btn_{i}',
+                    'bg_opa': 'cover',
+                    'bg_color': 'color_steel_blue'
+                }
+            })
+        else:
+            # Unselected buttons: transparent background ONLY
+            button_updates.append({
+                'lvgl.obj.update': {
+                    'id': f'light_btn_{i}',
+                    'bg_opa': 'transp'
+                }
+            })
 
     return {
         'obj': {
@@ -76,7 +89,7 @@ def generate_light_button(index, icon_var, lights_amount):
                     }
                 },
                 {'lvgl.page.show': 'light_control_page'}
-            ] + shadow_updates
+            ] + button_updates
         }
     }
 
@@ -121,7 +134,8 @@ def generate_light_ui(substitutions):
                     {
                         'lvgl.obj.update': {
                             'id': 'light_btn_1',
-                            'shadow_color': 'color_misty_blue'
+                            'bg_opa': 'cover',
+                            'bg_color': 'color_steel_blue'
                         }
                     },
                     {'delay': '1s'},
@@ -176,10 +190,12 @@ def generate_light_ui(substitutions):
                 'id': 'light_control_page',
                 'bg_color': 'color_slate_blue_gray',
                 'on_load': [
-                            # ✅ Método centralizado
-        - script.execute:
-            id: set_active_page
-            page_name: "light_control_page"
+                    {
+                        'script.execute': {
+                            'id': 'set_active_page',
+                            'page_name': 'light_control_page'
+                        }
+                    },
                     {'script.execute': 'light_update_layout'},
                     {'delay': '200ms'},
                     {'script.execute': 'light_update_lightbulb_color'},
@@ -640,12 +656,15 @@ def generate_light_ui(substitutions):
                                 }
                             }],
                             'on_click': [
-                                {  'lvgl.widget.hide': 'light_select_widget'},
-                                {  'delay': '100ms'},
-            - script.execute:
-                id: page_cleanup
-                page_name: "texto_page"
-                                {  'lvgl.page.show': 'home_page'}
+                                {'lvgl.widget.hide': 'light_select_widget'},
+                                {'delay': '100ms'},
+                                {
+                                    'script.execute': {
+                                        'id': 'page_cleanup',
+                                        'page_name': 'light_control_page'
+                                    }
+                                },
+                                {'lvgl.page.show': 'home_page'}
                             ]
                         }
                     }
@@ -680,8 +699,6 @@ def main():
 
         print(f"✓ Successfully generated light_ui_lvgl_generated.yaml")
         print(f"  Lights configured: {substitutions.get('lights_amount', 5)}")
-        print(f"  !lambda expressions properly formatted")
-        print(f"  light_lightbulb_btn at correct hierarchy level")
 
     except FileNotFoundError as e:
         print(f"✗ Error: {e}")
