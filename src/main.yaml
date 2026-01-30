@@ -340,9 +340,9 @@ touchscreen:
               then:
                 - script.execute: exit_screensaver
               else:
-          - light.turn_on:
-              id: display_backlight
-              brightness: 100%
+                - light.turn_on:
+                    id: display_backlight
+                    brightness: 100%
 
   # on_touch:
   #   - lambda: |-

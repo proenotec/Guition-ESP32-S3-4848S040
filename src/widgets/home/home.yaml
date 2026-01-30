@@ -163,7 +163,6 @@ time:
         then:
           - script.execute: time_update
 
-
 sensor:
 
   # Weather forecast daily count
@@ -211,21 +210,30 @@ sensor:
     attribute: wind_speed
     on_value:
       then:
-        - if:
-            condition:
-              lambda: return id(weather_wind_speed_unit_sensor).state == "km/h";
-            then:
-              - lvgl.label.update:
-                  id: weather_wind_speed_value
-                  text:
-                    format: "%.1f "
-                    args: [id(weather_wind_speed_sensor).state]
-            else:
-              - lvgl.label.update:
-                  id: weather_wind_speed_value
-                  text:
-                    format: "%.0f "
-                    args: [id(weather_wind_speed_sensor).state]
+        - script.execute: update_wind_label
+
+  # Weather wind direction sensor
+  - platform: homeassistant
+    id: weather_wind_direction_sensor
+    entity_id: "${weather_entity}"
+    attribute: wind_bearing
+    internal: true
+    on_value:
+      then:
+        - script.execute: update_wind_label
+
+#        - logger.log:
+#            format: "Wind direction: %.1f° (%s)"
+#            args:
+#              - id(weather_wind_direction_sensor).state
+#              - >-
+#                  [&]() -> const char* {
+#                    float bearing = id(weather_wind_direction_sensor).state;
+#                    static const char* directions[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+#                                                "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+#                    int index = (int)((bearing + 11.25) / 22.5) % 16;
+#                    return directions[index];
+#                  }()
 
   # Home temperature sensor1
   - platform: homeassistant
@@ -391,9 +399,7 @@ text_sensor:
     attribute: wind_speed_unit
     on_value:
       then:
-        - lvgl.label.update:
-            id: weather_wind_speed_unit
-            text: !lambda return x;
+        - script.execute: update_wind_label
 
   # IP address
   - platform: wifi_info
@@ -446,20 +452,6 @@ lvgl:
                 brightness: 60%  # Brillo bajo para el salvapantallas
           else:
             - logger.log: "LVGL idle, but backlight timeout disabled"
-
-#lvgl:
-#  on_idle:
-#    timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
-#    then:
-#      - if:
-#          condition:
-#            lambda: 'return id(display_timeout_backlight).state >= 0;'
-#          then:
-#            - logger.log: "LVGL is idle"
-#            - light.turn_off: display_backlight
-#            - script.execute: pause_lvgl_display  # ✅ Use centralized script
-#          else:
-#            - logger.log: "LVGL idle, but backlight is on"
 
   pages:
     - id: home_page
@@ -537,7 +529,6 @@ lvgl:
                   text_font: mdi_icons_24
 
         # weather
-
         - obj:
             id: main_widget_background
             hidden: false
@@ -609,17 +600,7 @@ lvgl:
                         text_align: right
 
                     - label:
-                        id: weather_wind_speed_value
-                        x: -100
-                        y: 40
-                        align: top_right
-                        text_font: nunito_18
-                        text_color: color_misty_blue
-                        text: ""
-                        text_align: right
-
-                    - label:
-                        id: weather_wind_speed_unit
+                        id: weather_wind_combined_label
                         x: -60
                         y: 40
                         align: top_right
@@ -627,16 +608,6 @@ lvgl:
                         text_color: color_misty_blue
                         text: ""
                         text_align: right
-
-                    # - label:
-                    #     id: weather_wind_speed_icon
-                    #     x: -30
-                    #     y: 40
-                    #     align: top_right
-                    #     text_font: icons_24
-                    #     text_color: color_misty_blue
-                    #     text: "${windsock_icon}"
-                    #     text_align: right
 
                     - image:
                         id: weather_wind_speed_image
@@ -677,7 +648,7 @@ lvgl:
                         align: top_left
                         text_font: nunito_16
                         text_color: color_misty_blue
-                        text: "Monday"
+                        text: ""
 
                     - label:
                         id: date_month_value
@@ -686,7 +657,7 @@ lvgl:
                         align: top_right
                         text_font: nunito_16
                         text_color: color_misty_blue
-                        text: "31, December"
+                        text: ""
 
                     - label:
                         id: time_value
@@ -694,7 +665,7 @@ lvgl:
                         align: top_mid
                         text_font: nunito_64
                         text_color: color_misty_blue
-                        text: "23:59"
+                        text: ""
 
                     - obj:
                         id: datetime_widget_line
@@ -1817,6 +1788,28 @@ mapping:
       pl: flags_pl_img
 
 script:
+  - id: update_wind_label
+    then:
+      - lvgl.label.update:
+          id: weather_wind_combined_label
+          text: !lambda |-
+            float bearing = id(weather_wind_direction_sensor).state;
+            static const char* directions[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+            int index = int((bearing + 11.25) / 22.5) % 16;
+            std::string direction = directions[index];
+
+            std::string speed_str;
+            char buf[10];
+            if (id(weather_wind_speed_unit_sensor).state == "km/h") {
+              snprintf(buf, sizeof(buf), "%.1f", id(weather_wind_speed_sensor).state);
+              speed_str = buf;
+            } else {
+              snprintf(buf, sizeof(buf), "%.0f", id(weather_wind_speed_sensor).state);
+              speed_str = buf;
+            }
+
+            return speed_str + " " + id(weather_wind_speed_unit_sensor).state + " " + direction;
+
   - id: update_circle_display
     mode: restart
     then:
@@ -2221,7 +2214,6 @@ script:
             snprintf(buf, sizeof(buf), "%02d %s", now.day_of_month, id(i18n_translations).translate(month_key).c_str());
             return buf;
 
-
 ####### FORECASTS ########
 
   # ========================================
@@ -2269,7 +2261,6 @@ script:
           int32_t tz_offset = offset_hours * 3600 +
                             (local_now.minute - utc_now.minute) * 60 +
                             (local_now.second - utc_now.second);
-
 
           for (int i = 0; i < count; i++) {
             JsonObject forecast = forecasts[i];
@@ -2723,7 +2714,6 @@ script:
 
             # Esperar 1 minuto antes del siguiente movimiento
             - delay: 60s
-
 
 interval:
   - interval: 5s
